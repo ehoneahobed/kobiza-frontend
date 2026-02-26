@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Paidli Color Palette - Teal & Amber System */
+  /* Kobiza Color Palette - Teal & Amber System */
   --color-primary: #0D9488;        /* Deep Teal */
   --color-cta: #F59E0B;            /* Vibrant Amber */
   --color-secondary: #38BDF8;      /* Sky Blue */

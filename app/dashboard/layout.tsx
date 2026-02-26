@@ -33,8 +33,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [planTier, setPlanTier] = useState<PlanTier>('FREE');
 
   useEffect(() => {
-    getMyProfile().then(setProfile).catch(() => {});
-    getMyPlan().then((p) => setPlanTier(p.plan)).catch(() => {});
+    getMyProfile().then(setProfile).catch(() => { });
+    getMyPlan().then((p) => setPlanTier(p.plan)).catch(() => { });
   }, []);
 
   const handleLogout = () => {
@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Logo */}
         <div className="px-6 pt-5 pb-4 border-b border-white/10">
           <Link href="/dashboard" className="text-2xl font-bold text-[#0D9488]">
-            Paidli
+            Kobiza
           </Link>
         </div>
 
@@ -102,11 +102,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${active
                     ? 'bg-[#0D9488] text-white'
                     : 'text-white/60 hover:text-white hover:bg-white/10'
-                }`}
+                  }`}
               >
                 <span className="text-base">{item.icon}</span>
                 <span className="flex-1">{item.label}</span>

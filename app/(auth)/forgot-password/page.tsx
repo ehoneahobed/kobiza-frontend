@@ -30,7 +30,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link href="/" className="block text-center mb-8">
-          <span className="text-3xl font-bold text-[#0D9488]">Paidli</span>
+          <span className="text-3xl font-bold text-[#0D9488]">Kobiza</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-sm p-8">

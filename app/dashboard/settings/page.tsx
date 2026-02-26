@@ -72,7 +72,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-[#1F2937]">Profile & Storefront</h1>
         <p className="text-[#6B7280] mt-1">
@@ -82,7 +82,7 @@ export default function SettingsPage() {
             target="_blank"
             className="text-[#0D9488] hover:underline"
           >
-            paidli.com/{form.slug}
+            Kobiza.com/{form.slug}
           </a>
         </p>
       </div>
@@ -117,7 +117,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h2 className="font-semibold text-[#1F2937] mb-4">Storefront URL</h2>
           <div className="flex items-center gap-2">
-            <span className="text-[#6B7280] text-sm whitespace-nowrap">paidli.com/</span>
+            <span className="text-[#6B7280] text-sm whitespace-nowrap">Kobiza.com/</span>
             <Input
               label=""
               value={form.slug}
@@ -152,7 +152,7 @@ export default function SettingsPage() {
                   onClick={() => setForm((f) => ({ ...f, brandColor: '#0D9488' }))}
                   className="text-xs text-[#6B7280] hover:text-[#0D9488]"
                 >
-                  Reset to Paidli Teal
+                  Reset to Kobiza Teal
                 </button>
               </div>
             </div>

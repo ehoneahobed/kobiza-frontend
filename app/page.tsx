@@ -5,7 +5,7 @@ export default function Home() {
     <main className="min-h-screen bg-[#1F2937] flex flex-col">
       {/* Nav */}
       <header className="px-8 py-5 flex items-center justify-between">
-        <span className="text-2xl font-bold text-[#0D9488]">Paidli</span>
+        <span className="text-2xl font-bold text-[#0D9488]">Kobiza</span>
         <div className="flex items-center gap-3">
           <Link href="/explore" className="text-sm text-white/60 hover:text-white transition-colors">
             Explore

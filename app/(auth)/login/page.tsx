@@ -33,12 +33,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="block text-center mb-8">
-          <span className="text-3xl font-bold text-[#0D9488]">Paidli</span>
+          <span className="text-3xl font-bold text-[#0D9488]">Kobiza</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-sm p-8">
           <h1 className="text-2xl font-bold text-[#1F2937] mb-2">Welcome back</h1>
-          <p className="text-[#6B7280] mb-6">Log in to your Paidli account.</p>
+          <p className="text-[#6B7280] mb-6">Log in to your Kobiza account.</p>
 
           {/* Google OAuth */}
           <a

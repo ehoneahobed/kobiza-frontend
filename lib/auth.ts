@@ -58,13 +58,13 @@ export async function updateMe(data: { name?: string; avatarUrl?: string }): Pro
 }
 
 export function saveToken(token: string) {
-  localStorage.setItem('paidli_token', token);
+  localStorage.setItem('Kobiza_token', token);
 }
 
 export function clearToken() {
-  localStorage.removeItem('paidli_token');
+  localStorage.removeItem('Kobiza_token');
 }
 
 export function getToken(): string | null {
-  return typeof window !== 'undefined' ? localStorage.getItem('paidli_token') : null;
+  return typeof window !== 'undefined' ? localStorage.getItem('Kobiza_token') : null;
 }

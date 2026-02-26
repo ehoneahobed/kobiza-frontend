@@ -118,7 +118,7 @@ export default function DashboardPage() {
 
   const hasCommunity = (profile?.communities?.length ?? 0) > 0;
   const slug = profile?.slug ?? '';
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://paidli.com';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://Kobiza.com';
   const storefrontUrl = `${origin}/${slug}`;
 
   return (
@@ -261,14 +261,12 @@ export default function DashboardPage() {
               <Link
                 key={step.label}
                 href={step.href}
-                className={`flex items-center gap-3 p-3 rounded-lg hover:bg-[#F3F4F6] transition-colors ${
-                  step.done ? 'opacity-50' : ''
-                }`}
+                className={`flex items-center gap-3 p-3 rounded-lg hover:bg-[#F3F4F6] transition-colors ${step.done ? 'opacity-50' : ''
+                  }`}
               >
                 <span
-                  className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs ${
-                    step.done ? 'bg-[#0D9488] border-[#0D9488] text-white' : 'border-[#6B7280]'
-                  }`}
+                  className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs ${step.done ? 'bg-[#0D9488] border-[#0D9488] text-white' : 'border-[#6B7280]'
+                    }`}
                 >
                   {step.done ? '✓' : ''}
                 </span>

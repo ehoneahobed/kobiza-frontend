@@ -322,9 +322,9 @@ export default function ExplorePage() {
 
   const totalCount = results
     ? results.communities.length +
-      results.courses.length +
-      results.downloads.length +
-      results.coaching.length
+    results.courses.length +
+    results.downloads.length +
+    results.coaching.length
     : 0;
 
   const hasResults = (tab: FilterTab) => {
@@ -343,7 +343,7 @@ export default function ExplorePage() {
       <header className="bg-[#1F2937] sticky top-0 z-20">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-[#0D9488]">
-            Paidli
+            Kobiza
           </Link>
           <div className="flex items-center gap-3">
             {isLoggedIn ? (
@@ -409,32 +409,30 @@ export default function ExplorePage() {
                 ? tab.key === 'all'
                   ? totalCount
                   : tab.key === 'communities'
-                  ? results.communities.length
-                  : tab.key === 'courses'
-                  ? results.courses.length
-                  : tab.key === 'downloads'
-                  ? results.downloads.length
-                  : results.coaching.length
+                    ? results.communities.length
+                    : tab.key === 'courses'
+                      ? results.courses.length
+                      : tab.key === 'downloads'
+                        ? results.downloads.length
+                        : results.coaching.length
                 : 0;
               return (
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
-                    activeTab === tab.key
+                  className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${activeTab === tab.key
                       ? 'border-[#0D9488] text-[#0D9488]'
                       : 'border-transparent text-[#6B7280] hover:text-[#1F2937]'
-                  }`}
+                    }`}
                 >
                   <span>{tab.emoji}</span>
                   <span>{tab.label}</span>
                   {!loading && count > 0 && (
                     <span
-                      className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center ${
-                        activeTab === tab.key
+                      className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center ${activeTab === tab.key
                           ? 'bg-[#0D9488]/10 text-[#0D9488]'
                           : 'bg-[#F3F4F6] text-[#6B7280]'
-                      }`}
+                        }`}
                     >
                       {count}
                     </span>
@@ -582,10 +580,10 @@ export default function ExplorePage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[#F59E0B] text-xl">⚡</span>
-                  <h3 className="font-bold text-base">Paidli&apos;s Accountability Track</h3>
+                  <h3 className="font-bold text-base">Kobiza&apos;s Accountability Track</h3>
                 </div>
                 <p className="text-white/80 text-sm">
-                  Unlike other platforms, Paidli courses offer an Accountability Track — where a
+                  Unlike other platforms, Kobiza courses offer an Accountability Track — where a
                   real coach reviews your work and gives personalised feedback. Not just videos.
                   Real results.
                 </p>

@@ -14,11 +14,12 @@ import {
   MembershipTier,
   CommunityQuickLink,
 } from '@/lib/creator';
-import { getPostsFeed, createPost, Post, getCategories, createCategory, deleteCategory, PostCategory, getCommunityClassroom, ClassroomCourse, getJoinRequests, reviewJoinRequest, JoinRequest, JoinRequestStatus, CommunityVisibility, getMembers, CommunityMember, CommunityRole, setMemberRole, removeMember } from '@/lib/community';
+import { getPostsFeed, createPost, Post, getCategories, createCategory, deleteCategory, PostCategory, getCommunityClassroom, ClassroomCourse, getJoinRequests, reviewJoinRequest, JoinRequest, JoinRequestStatus, CommunityVisibility, getMembers, CommunityMember, CommunityRole, setMemberRole, removeMember, getEvents, createEvent, updateEvent, deleteEvent, CommunityEvent, CreateEventData, getTierConfig, TierConfig } from '@/lib/community';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import PostCard from '@/components/community/PostCard';
 import MentionInput from '@/components/community/MentionInput';
+import TierAccessConfig from '@/components/community/TierAccessConfig';
 import { getToken } from '@/lib/auth';
 import { API_URL } from '@/lib/api';
 import { useCommunitySocket } from '@/hooks/useCommunitySocket';
@@ -37,7 +38,7 @@ function getUserIdFromToken(): string | null {
   }
 }
 
-type Tab = 'feed' | 'classroom' | 'members' | 'settings' | 'requests' | 'ai';
+type Tab = 'feed' | 'events' | 'classroom' | 'members' | 'settings' | 'requests' | 'ai' | 'tier-access';
 
 export default function CommunityPage() {
   const router = useRouter();
@@ -103,6 +104,23 @@ export default function CommunityPage() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsFilter, setRequestsFilter] = useState<JoinRequestStatus | 'ALL'>('PENDING');
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+
+  // Events state
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CommunityEvent | null>(null);
+  const [eventForm, setEventForm] = useState<CreateEventData & { isPublished?: boolean }>({
+    title: '', startsAt: '', endsAt: '', eventType: 'ONLINE',
+  });
+  const [eventSaving, setEventSaving] = useState(false);
+
+  // Tier Access state
+  const [tierConfig, setTierConfig] = useState<TierConfig | null>(null);
+  const [tierConfigLoading, setTierConfigLoading] = useState(false);
+
+  // Post tier selector
+  const [postMinTierOrder, setPostMinTierOrder] = useState(0);
 
   // AI Copilot state
   const [isPro, setIsPro] = useState(false);
@@ -177,6 +195,20 @@ export default function CommunityPage() {
         .then(setMembers)
         .catch(() => {})
         .finally(() => setMembersLoading(false));
+    }
+    if (activeTab === 'events' && community?.id) {
+      setEventsLoading(true);
+      getEvents(community.id)
+        .then(setEvents)
+        .catch(() => {})
+        .finally(() => setEventsLoading(false));
+    }
+    if (activeTab === 'tier-access' && community?.id) {
+      setTierConfigLoading(true);
+      getTierConfig(community.id)
+        .then(setTierConfig)
+        .catch(() => {})
+        .finally(() => setTierConfigLoading(false));
     }
     if (activeTab === 'requests' && community?.id) {
       loadJoinRequests();
@@ -335,10 +367,12 @@ export default function CommunityPage() {
       const post = await createPost(community.id, {
         content: postContent.trim(),
         mentionedUserIds: mentionedUserIds.length ? mentionedUserIds : undefined,
+        ...(postMinTierOrder > 0 ? { minTierOrder: postMinTierOrder } : {}),
       });
       setPosts((ps) => [post, ...ps]);
       setPostContent('');
       setPostMentionMap(new Map());
+      setPostMinTierOrder(0);
     } catch {
       // fail silently
     } finally {
@@ -536,7 +570,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div>
       {/* Header with community switcher */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -661,10 +695,12 @@ export default function CommunityPage() {
           <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm w-fit flex-wrap">
             {([
               'feed',
+              'events',
               'classroom',
               'members',
               ...((community as any)?.visibility === 'PRIVATE' ? ['requests' as Tab] : []),
               'ai',
+              'tier-access',
               'settings',
             ] as Tab[]).map((tab) => (
               <button
@@ -677,6 +713,7 @@ export default function CommunityPage() {
                 }`}
               >
                 {tab === 'feed' && '💬 Feed'}
+                {tab === 'events' && '📅 Events'}
                 {tab === 'classroom' && '🎓 Classroom'}
                 {tab === 'members' && '👥 Members'}
                 {tab === 'ai' && (
@@ -690,6 +727,7 @@ export default function CommunityPage() {
                   </>
                 )}
                 {tab === 'requests' && '📋 Requests'}
+                {tab === 'tier-access' && '🔒 Tier Access'}
                 {tab === 'settings' && '⚙ Settings'}
               </button>
             ))}
@@ -746,7 +784,25 @@ export default function CommunityPage() {
                 className="w-full rounded-lg border border-[#F3F4F6] bg-[#F3F4F6] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none text-sm"
                 disabled={posting}
               />
-              <div className="flex justify-end mt-3">
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-gray-500">Visibility:</label>
+                  <select
+                    value={postMinTierOrder}
+                    onChange={(e) => setPostMinTierOrder(parseInt(e.target.value))}
+                    className="text-xs border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value={0}>All tiers</option>
+                    {(community.membershipTiers ?? [])
+                      .filter((t: any) => (t.order ?? 0) > 0)
+                      .sort((a: any, b: any) => (a.order ?? 0) - (b.order ?? 0))
+                      .map((t: any) => (
+                        <option key={t.id} value={t.order ?? 0}>
+                          {t.name}+ (order {t.order ?? 0}+)
+                        </option>
+                      ))}
+                  </select>
+                </div>
                 <Button type="submit" loading={posting} disabled={!postContent.trim()}>
                   Post
                 </Button>
@@ -778,6 +834,295 @@ export default function CommunityPage() {
                 onDelete={(postId) => setPosts((ps) => ps.filter((p) => p.id !== postId))}
               />
             ))
+          )}
+        </div>
+      )}
+
+      {/* ── Events Tab ──────────────────────────────────────────────────── */}
+      {activeTab === 'events' && community && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-[#1F2937]">Community Events</h2>
+              <p className="text-sm text-[#6B7280] mt-0.5">Create and manage events for your community.</p>
+            </div>
+            <Button onClick={() => { setEditingEvent(null); setEventForm({ title: '', startsAt: '', endsAt: '', eventType: 'ONLINE', recurrenceType: 'NONE' }); setShowEventForm(true); }}>
+              + New Event
+            </Button>
+          </div>
+
+          {showEventForm && (
+            <div className="bg-white rounded-xl shadow-sm p-5 space-y-3">
+              <h3 className="font-semibold text-[#1F2937]">{editingEvent ? 'Edit Event' : 'Create Event'}</h3>
+              <Input
+                label="Title"
+                placeholder="Event title"
+                value={eventForm.title || ''}
+                onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+              />
+              <textarea
+                placeholder="Description (optional)"
+                value={eventForm.description || ''}
+                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                rows={3}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Starts at</label>
+                  <input
+                    type="datetime-local"
+                    value={eventForm.startsAt ? eventForm.startsAt.slice(0, 16) : ''}
+                    onChange={(e) => setEventForm({ ...eventForm, startsAt: new Date(e.target.value).toISOString() })}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Ends at</label>
+                  <input
+                    type="datetime-local"
+                    value={eventForm.endsAt ? eventForm.endsAt.slice(0, 16) : ''}
+                    onChange={(e) => setEventForm({ ...eventForm, endsAt: new Date(e.target.value).toISOString() })}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Event type</label>
+                  <select
+                    value={eventForm.eventType || 'ONLINE'}
+                    onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value as any })}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                  >
+                    <option value="ONLINE">Online</option>
+                    <option value="IN_PERSON">In Person</option>
+                    <option value="HYBRID">Hybrid</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Minimum tier</label>
+                  <select
+                    value={eventForm.minTierOrder ?? 0}
+                    onChange={(e) => setEventForm({ ...eventForm, minTierOrder: parseInt(e.target.value) })}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                  >
+                    <option value={0}>All tiers (open to everyone)</option>
+                    {(community.membershipTiers ?? [])
+                      .filter((t: MembershipTier) => t.order > 0)
+                      .sort((a: MembershipTier, b: MembershipTier) => a.order - b.order)
+                      .map((t: MembershipTier) => (
+                        <option key={t.id} value={t.order}>
+                          {t.name} and above
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+              {/* Recurrence */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 block mb-1">Repeats</label>
+                  <select
+                    value={(eventForm as any).recurrenceType || 'NONE'}
+                    onChange={(e) => setEventForm({ ...eventForm, recurrenceType: e.target.value as any })}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                  >
+                    <option value="NONE">Does not repeat</option>
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="BIWEEKLY">Every 2 weeks</option>
+                    <option value="MONTHLY">Monthly</option>
+                  </select>
+                </div>
+                {(eventForm as any).recurrenceType && (eventForm as any).recurrenceType !== 'NONE' && (
+                  <div>
+                    <label className="text-xs text-gray-500 block mb-1">Repeats until</label>
+                    <input
+                      type="date"
+                      value={(eventForm as any).recurrenceEndDate ? (eventForm as any).recurrenceEndDate.slice(0, 10) : ''}
+                      onChange={(e) => setEventForm({ ...eventForm, recurrenceEndDate: e.target.value ? new Date(e.target.value).toISOString() : undefined })}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Leave empty to repeat for 3 months</p>
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Location"
+                  placeholder="Location (optional)"
+                  value={eventForm.location || ''}
+                  onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                />
+                <Input
+                  label="Meeting URL"
+                  placeholder="Meeting URL (optional)"
+                  value={eventForm.locationUrl || ''}
+                  onChange={(e) => setEventForm({ ...eventForm, locationUrl: e.target.value })}
+                />
+              </div>
+              <Input
+                label="Max Attendees"
+                type="number"
+                placeholder="Max attendees (leave empty for unlimited)"
+                value={eventForm.maxAttendees || ''}
+                onChange={(e) => setEventForm({ ...eventForm, maxAttendees: e.target.value ? parseInt(e.target.value) : undefined })}
+              />
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowEventForm(false)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                <Button
+                  loading={eventSaving}
+                  disabled={!eventForm.title || !eventForm.startsAt || !eventForm.endsAt}
+                  onClick={async () => {
+                    setEventSaving(true);
+                    try {
+                      if (editingEvent) {
+                        const updated = await updateEvent(editingEvent.id, eventForm);
+                        setEvents((prev) => prev.map((e) => e.id === updated.id ? updated : e));
+                      } else {
+                        const created = await createEvent(community.id, eventForm);
+                        // Reload events to get all generated instances
+                        getEvents(community.id).then(setEvents).catch(() => {});
+                      }
+                      setShowEventForm(false);
+                    } catch { /* ignore */ } finally { setEventSaving(false); }
+                  }}
+                >
+                  {editingEvent ? 'Update' : 'Create'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {eventsLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-6 h-6 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : events.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm p-10 text-center">
+              <div className="text-4xl mb-3">📅</div>
+              <p className="font-semibold text-[#1F2937]">No events yet</p>
+              <p className="text-sm text-[#6B7280] mt-1">Create your first community event.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {events.map((event) => {
+                const isRecurring = event.recurrenceType !== 'NONE' || !!event.parentEventId;
+                const tierName = event.minTierOrder > 0
+                  ? (community.membershipTiers ?? []).find((t: MembershipTier) => t.order === event.minTierOrder)?.name ?? `Tier ${event.minTierOrder}+`
+                  : null;
+                return (
+                  <div key={event.id} className="bg-white rounded-xl shadow-sm p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">{event.title}</h3>
+                          {isRecurring && (
+                            <span className="text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded">
+                              {event.recurrenceType !== 'NONE'
+                                ? { DAILY: 'Daily', WEEKLY: 'Weekly', BIWEEKLY: 'Bi-weekly', MONTHLY: 'Monthly' }[event.recurrenceType]
+                                : 'Recurring'}
+                            </span>
+                          )}
+                          {tierName && (
+                            <span className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded">
+                              {tierName}+
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {new Date(event.startsAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          {' · '}
+                          {new Date(event.startsAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                          {' - '}
+                          {new Date(event.endsAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {event._count.rsvps} RSVPs · {event.eventType}
+                          {event.maxAttendees ? ` · ${event.maxAttendees} max` : ''}
+                        </p>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => {
+                            setEditingEvent(event);
+                            setEventForm({
+                              title: event.title,
+                              description: event.description ?? undefined,
+                              location: event.location ?? undefined,
+                              locationUrl: event.locationUrl ?? undefined,
+                              eventType: event.eventType,
+                              startsAt: event.startsAt,
+                              endsAt: event.endsAt,
+                              minTierOrder: event.minTierOrder,
+                              maxAttendees: event.maxAttendees ?? undefined,
+                              recurrenceType: event.recurrenceType,
+                              recurrenceEndDate: event.recurrenceEndDate ?? undefined,
+                            });
+                            setShowEventForm(true);
+                          }}
+                          className="text-xs text-[#0D9488] hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const isSeries = event.recurrenceType !== 'NONE';
+                            const doDeleteSeries = isSeries && confirm('Delete the entire recurring series? Click Cancel to delete just this occurrence.');
+                            if (!isSeries && !confirm('Delete this event?')) return;
+                            await deleteEvent(event.id, doDeleteSeries);
+                            if (doDeleteSeries) {
+                              // Remove parent + all children
+                              setEvents((prev) => prev.filter((e) => e.id !== event.id && e.parentEventId !== event.id));
+                            } else {
+                              setEvents((prev) => prev.filter((e) => e.id !== event.id));
+                            }
+                          }}
+                          className="text-xs text-red-500 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tier Access Tab ────────────────────────────────────────────────── */}
+      {activeTab === 'tier-access' && community && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="font-semibold text-[#1F2937]">Tier-Based Access Control</h2>
+            <p className="text-sm text-[#6B7280] mt-0.5">
+              Configure which membership tiers can access specific categories and content.
+              Higher tier order = higher access level. Content with minTierOrder = N is only visible to tiers with order &ge; N.
+            </p>
+          </div>
+
+          {tierConfigLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-6 h-6 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : tierConfig ? (
+            <div className="bg-white rounded-xl shadow-sm p-5">
+              <TierAccessConfig
+                communityId={community.id}
+                tiers={tierConfig.tiers}
+                categories={tierConfig.categories}
+                onUpdate={() => {
+                  getTierConfig(community.id).then(setTierConfig).catch(() => {});
+                }}
+              />
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm p-10 text-center">
+              <p className="text-[#6B7280]">Failed to load tier configuration.</p>
+            </div>
           )}
         </div>
       )}

@@ -50,7 +50,7 @@ function ResetPasswordForm() {
     <div className="min-h-screen bg-[#F3F4F6] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         <Link href="/" className="block text-center mb-8">
-          <span className="text-3xl font-bold text-[#0D9488]">Paidli</span>
+          <span className="text-3xl font-bold text-[#0D9488]">Kobiza</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-sm p-8">
@@ -73,7 +73,7 @@ function ResetPasswordForm() {
             <>
               <h1 className="text-2xl font-bold text-[#1F2937] mb-2">Choose a new password</h1>
               <p className="text-[#6B7280] mb-6">
-                Enter a new password for your Paidli account.
+                Enter a new password for your Kobiza account.
               </p>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">

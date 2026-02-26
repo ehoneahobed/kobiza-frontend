@@ -21,7 +21,7 @@ function Sidebar({ user, onLogout }: { user: AuthUser | null; onLogout: () => vo
     <aside className="w-56 bg-[#1F2937] flex flex-col fixed inset-y-0 left-0 z-20">
       <div className="p-5 border-b border-white/10">
         <Link href="/home" className="text-xl font-bold text-[#0D9488] block">
-          Paidli
+          Kobiza
         </Link>
         <p className="text-xs text-white/40 mt-0.5">Learning Hub</p>
       </div>
@@ -88,7 +88,7 @@ function DiscoverBanner() {
       <h2 className="text-xl font-bold mb-2">Your learning journey starts here</h2>
       <p className="text-white/70 text-sm max-w-md mx-auto mb-6">
         Find creators building courses and communities around what you want to learn.
-        Paidli&apos;s accountability track means you get <strong className="text-[#F59E0B]">real coaching</strong>,
+        Kobiza&apos;s accountability track means you get <strong className="text-[#F59E0B]">real coaching</strong>,
         not just videos.
       </p>
       <Link

@@ -16,11 +16,13 @@ import {
   requestToJoin,
   cancelJoinRequest,
   joinFreeTier,
+  getEvents,
   Post,
   LeaderboardEntry,
   CommunityMember,
   CommunityRole,
   CommunityClassroomCourse,
+  CommunityEvent,
   PostCategory,
   QuickLink,
   MembershipStatus,
@@ -35,11 +37,13 @@ import MentionInput from '@/components/community/MentionInput';
 import CommunitySidebar from '@/components/community/CommunitySidebar';
 import LeaderboardList from '@/components/community/LeaderboardList';
 import WelcomeCard from '@/components/community/WelcomeCard';
+import CalendarView from '@/components/community/CalendarView';
 
-type Tab = 'feed' | 'classroom' | 'members' | 'leaderboard' | 'about';
+type Tab = 'feed' | 'calendar' | 'classroom' | 'members' | 'leaderboard' | 'about';
 
 const ALL_TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'feed', label: 'Community', icon: '💬' },
+  { id: 'calendar', label: 'Calendar', icon: '📅' },
   { id: 'classroom', label: 'Classroom', icon: '🎓' },
   { id: 'members', label: 'Members', icon: '👥' },
   { id: 'leaderboard', label: 'Leaderboard', icon: '🏆' },
@@ -392,6 +396,45 @@ function FeedTab({
 }
 
 // ── Classroom Tab ──────────────────────────────────────────────────────────
+function CalendarTab({ communityId, slug }: { communityId: string; slug: string }) {
+  const [events, setEvents] = useState<CommunityEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadEvents = useCallback(
+    (month?: number, year?: number) => {
+      setLoading(true);
+      getEvents(communityId, { month, year, withLockStatus: true })
+        .then(setEvents)
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    },
+    [communityId],
+  );
+
+  useEffect(() => {
+    const now = new Date();
+    loadEvents(now.getMonth() + 1, now.getFullYear());
+  }, [loadEvents]);
+
+  if (loading && events.length === 0) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-6 h-6 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-5">
+      <CalendarView
+        events={events}
+        onMonthChange={(month, year) => loadEvents(month, year)}
+        slug={slug}
+      />
+    </div>
+  );
+}
+
 function ClassroomTab({
   communityId,
   slug,
@@ -1310,6 +1353,9 @@ export default function CommunityHubPage() {
                   setMentionNotifs((prev) => [notif, ...prev].slice(0, 10))
                 }
               />
+            )}
+            {isMember && activeTab === 'calendar' && (
+              <CalendarTab communityId={community.id} slug={slug as string} />
             )}
             {isMember && activeTab === 'classroom' && (
               <ClassroomTab communityId={community.id} slug={slug as string} brand={brand} />

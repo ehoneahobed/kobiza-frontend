@@ -60,7 +60,7 @@ export default function SubmissionDetailPage() {
   const course = submission.enrollment?.course;
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <button

@@ -4,7 +4,7 @@ export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('paidli_token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('Kobiza_token') : null;
 
   const res = await fetch(`${API_URL}/api${path}`, {
     ...options,

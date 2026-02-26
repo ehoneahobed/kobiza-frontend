@@ -317,7 +317,7 @@ export default function CourseEditorPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <button onClick={() => router.push('/dashboard/courses')} className="text-[#6B7280] hover:text-[#1F2937]">

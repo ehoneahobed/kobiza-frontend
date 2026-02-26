@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Paidli — Build Your Creator Business",
+  title: "Kobiza — Build Your Creator Business",
   description:
     "An AI-native platform for creators to build communities, sell courses, and manage their business globally.",
 };

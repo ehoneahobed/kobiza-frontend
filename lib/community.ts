@@ -8,6 +8,7 @@ export interface PostCategory {
   name: string;
   emoji: string;
   order: number;
+  minTierOrder: number;
 }
 
 export interface PostAuthor {
@@ -45,6 +46,7 @@ export interface Post {
   content: string;
   imageUrl: string | null;
   isPinned: boolean;
+  minTierOrder: number;
   createdAt: string;
   updatedAt: string;
   author: PostAuthor;
@@ -361,4 +363,127 @@ export async function getCommunityPublic(communityId: string): Promise<{
   const res = await fetch(`${API_URL}/community/${communityId}/public`);
   if (!res.ok) throw new Error('Failed to fetch community info');
   return res.json();
+}
+
+// ── Events ────────────────────────────────────────────────────────────────
+
+export type EventType = 'ONLINE' | 'IN_PERSON' | 'HYBRID';
+export type RsvpStatus = 'GOING' | 'MAYBE' | 'NOT_GOING';
+export type RecurrenceType = 'NONE' | 'DAILY' | 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+
+export interface CommunityEvent {
+  id: string;
+  communityId: string;
+  title: string;
+  description: string | null;
+  coverUrl: string | null;
+  location: string | null;
+  locationUrl: string | null;
+  eventType: EventType;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  minTierOrder: number;
+  maxAttendees: number | null;
+  recurrenceType: RecurrenceType;
+  recurrenceEndDate: string | null;
+  parentEventId: string | null;
+  isPublished: boolean;
+  createdAt: string;
+  createdBy: { id: string; name: string; avatarUrl: string | null };
+  myRsvp: RsvpStatus | null;
+  rsvpCount: { going: number; maybe: number };
+  isLocked?: boolean;
+  _count: { rsvps: number };
+}
+
+export interface CreateEventData {
+  title: string;
+  description?: string;
+  coverUrl?: string;
+  location?: string;
+  locationUrl?: string;
+  eventType?: EventType;
+  startsAt: string;
+  endsAt: string;
+  timezone?: string;
+  minTierOrder?: number;
+  maxAttendees?: number;
+  recurrenceType?: RecurrenceType;
+  recurrenceEndDate?: string;
+}
+
+export async function getEvents(
+  communityId: string,
+  opts?: { month?: number; year?: number; withLockStatus?: boolean },
+): Promise<CommunityEvent[]> {
+  const params = new URLSearchParams();
+  if (opts?.month !== undefined) params.set('month', String(opts.month));
+  if (opts?.year !== undefined) params.set('year', String(opts.year));
+  if (opts?.withLockStatus) params.set('withLockStatus', 'true');
+  const qs = params.toString() ? `?${params.toString()}` : '';
+  return apiFetch(`/community/${communityId}/events${qs}`);
+}
+
+export async function createEvent(communityId: string, data: CreateEventData): Promise<CommunityEvent> {
+  return apiFetch(`/community/${communityId}/events`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateEvent(eventId: string, data: Partial<CreateEventData> & { isPublished?: boolean }): Promise<CommunityEvent> {
+  return apiFetch(`/community/events/${eventId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteEvent(eventId: string, deleteSeries?: boolean): Promise<void> {
+  const qs = deleteSeries ? '?deleteSeries=true' : '';
+  return apiFetch(`/community/events/${eventId}${qs}`, { method: 'DELETE' });
+}
+
+export async function rsvpEvent(eventId: string, status: RsvpStatus, note?: string): Promise<{ id: string; status: RsvpStatus }> {
+  return apiFetch(`/community/events/${eventId}/rsvp`, {
+    method: 'POST',
+    body: JSON.stringify({ status, note }),
+  });
+}
+
+export async function cancelRsvp(eventId: string): Promise<{ message: string }> {
+  return apiFetch(`/community/events/${eventId}/rsvp`, { method: 'DELETE' });
+}
+
+// ── Tier Config ──────────────────────────────────────────────────────────
+
+export interface TierConfigTier {
+  id: string;
+  name: string;
+  description: string | null;
+  priceMonthly: number;
+  priceAnnual: number;
+  currency: string;
+  isActive: boolean;
+  order: number;
+  _count: { memberships: number };
+}
+
+export interface TierConfig {
+  tiers: TierConfigTier[];
+  categories: PostCategory[];
+}
+
+export async function getTierConfig(communityId: string): Promise<TierConfig> {
+  return apiFetch(`/community/${communityId}/tier-config`);
+}
+
+export async function updateCategory(
+  categoryId: string,
+  data: { minTierOrder?: number; name?: string; emoji?: string },
+): Promise<PostCategory> {
+  return apiFetch(`/community/categories/${categoryId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }

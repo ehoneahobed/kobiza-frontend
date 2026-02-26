@@ -51,7 +51,7 @@ export default async function StorefrontPage({ params }: Props) {
             </div>
             <div className="pb-1">
               <h1 className="text-2xl font-bold text-[#1F2937]">{profile.user.name}</h1>
-              <p className="text-[#6B7280] text-sm">paidli.com/{slug}</p>
+              <p className="text-[#6B7280] text-sm">Kobiza.com/{slug}</p>
             </div>
           </div>
 

@@ -44,13 +44,12 @@ function PlanCard({
 
   return (
     <div
-      className={`bg-white rounded-2xl shadow-sm p-6 flex flex-col border-2 transition-all ${
-        isCurrent
+      className={`bg-white rounded-2xl shadow-sm p-6 flex flex-col border-2 transition-all ${isCurrent
           ? 'border-[#0D9488]'
           : details.highlight
-          ? 'border-amber-300'
-          : 'border-transparent'
-      }`}
+            ? 'border-amber-300'
+            : 'border-transparent'
+        }`}
     >
       {details.highlight && !isCurrent && (
         <div className="text-xs font-semibold text-amber-600 bg-amber-50 rounded-full px-3 py-1 w-fit mb-3">
@@ -147,7 +146,7 @@ export default function BillingPage() {
   useEffect(() => {
     getMyPlan()
       .then(setPlan)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
 
     if (searchParams.get('upgraded') === '1') {
@@ -210,7 +209,7 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-5xl">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-[#1F2937] text-white px-5 py-3 rounded-xl shadow-xl text-sm font-medium">
@@ -273,7 +272,7 @@ export default function BillingPage() {
       <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
         <h2 className="font-bold text-[#1F2937] mb-4">What does the platform fee mean?</h2>
         <p className="text-sm text-[#6B7280] mb-4">
-          For every sale you make on Paidli, a small percentage is retained by the platform. Here&apos;s how it plays out across plans:
+          For every sale you make on Kobiza, a small percentage is retained by the platform. Here&apos;s how it plays out across plans:
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

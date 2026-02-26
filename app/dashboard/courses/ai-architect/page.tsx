@@ -90,7 +90,7 @@ export default function AiArchitectPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-[#6B7280] mb-2">

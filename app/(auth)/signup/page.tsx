@@ -38,7 +38,7 @@ export default function SignUpPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="block text-center mb-8">
-          <span className="text-3xl font-bold text-[#0D9488]">Paidli</span>
+          <span className="text-3xl font-bold text-[#0D9488]">Kobiza</span>
         </Link>
 
         <div className="bg-white rounded-2xl shadow-sm p-8">
@@ -52,11 +52,10 @@ export default function SignUpPage() {
                 key={r}
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, role: r }))}
-                className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
-                  form.role === r
+                className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${form.role === r
                     ? 'bg-[#0D9488] text-white'
                     : 'text-[#6B7280] hover:bg-[#F3F4F6]'
-                }`}
+                  }`}
               >
                 {r === 'MEMBER' ? 'Join as Member' : 'Join as Creator'}
               </button>

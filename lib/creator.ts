@@ -8,6 +8,7 @@ export interface MembershipTier {
   priceAnnual: number;
   currency: string;
   isActive: boolean;
+  order: number;
 }
 
 export interface CommunityCategory {
@@ -157,7 +158,7 @@ export async function createTier(
 export async function updateTier(
   communityId: string,
   tierId: string,
-  data: { name?: string; description?: string; priceMonthly?: number; priceAnnual?: number; isActive?: boolean },
+  data: { name?: string; description?: string; priceMonthly?: number; priceAnnual?: number; isActive?: boolean; order?: number },
 ): Promise<MembershipTier> {
   return apiFetch(`/community/${communityId}/tiers/${tierId}`, {
     method: 'PATCH',
