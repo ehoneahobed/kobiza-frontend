@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch, API_URL } from './api';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -85,6 +85,7 @@ export interface CommunityMember {
   name: string;
   avatarUrl: string | null;
   communityRole: CommunityRole;
+  tierName: string | null;
   joinedAt: string;
 }
 
@@ -127,8 +128,28 @@ export interface QuickLink {
 
 // ── Feed ──────────────────────────────────────────────────────────────────
 
-export async function getPostsFeed(communityId: string, categoryId?: string): Promise<Post[]> {
-  const qs = categoryId ? `?categoryId=${categoryId}` : '';
+export type FeedSort = 'DEFAULT' | 'NEW' | 'TOP' | 'UNREAD';
+
+export interface FeedResponse {
+  posts: Post[];
+  total: number;
+  page: number;
+  hasMore: boolean;
+}
+
+export async function getPostsFeed(
+  communityId: string,
+  categoryId?: string,
+  sort?: FeedSort,
+  page?: number,
+  limit?: number,
+): Promise<FeedResponse> {
+  const params = new URLSearchParams();
+  if (categoryId) params.set('categoryId', categoryId);
+  if (sort && sort !== 'DEFAULT') params.set('sort', sort);
+  if (page && page > 1) params.set('page', String(page));
+  if (limit) params.set('limit', String(limit));
+  const qs = params.toString() ? `?${params.toString()}` : '';
   return apiFetch(`/community/${communityId}/posts${qs}`);
 }
 
@@ -359,8 +380,7 @@ export async function getCommunityPublic(communityId: string): Promise<{
   creatorName: string;
   creatorAvatarUrl: string | null;
 }> {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-  const res = await fetch(`${API_URL}/community/${communityId}/public`);
+  const res = await fetch(`${API_URL}/api/community/${communityId}/public`);
   if (!res.ok) throw new Error('Failed to fetch community info');
   return res.json();
 }
@@ -485,5 +505,21 @@ export async function updateCategory(
   return apiFetch(`/community/categories/${categoryId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
+  });
+}
+
+export interface SwitchTierResult {
+  action: 'checkout' | 'downgraded' | 'enrolled';
+  tierId: string;
+  message: string;
+}
+
+export async function switchTier(
+  communityId: string,
+  targetTierId: string,
+): Promise<SwitchTierResult> {
+  return apiFetch(`/community/${communityId}/switch-tier`, {
+    method: 'POST',
+    body: JSON.stringify({ targetTierId }),
   });
 }

@@ -9,6 +9,7 @@ interface Props {
   communityName: string;
   description?: string | null;
   memberCount: number;
+  onlineCount?: number;
   courseCount: number;
   quickLinks?: QuickLink[];
   leaderboard: LeaderboardEntry[];
@@ -19,6 +20,7 @@ export default function CommunitySidebar({
   communityName,
   description,
   memberCount,
+  onlineCount,
   courseCount,
   quickLinks,
   leaderboard,
@@ -39,6 +41,18 @@ export default function CommunitySidebar({
             <p className="text-xl font-bold text-[#1F2937]">{memberCount}</p>
             <p className="text-xs text-[#6B7280]">Members</p>
           </button>
+          {typeof onlineCount === 'number' && onlineCount > 0 && (
+            <button
+              onClick={() => onTabChange('members')}
+              className="flex-1 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors"
+            >
+              <p className="text-xl font-bold text-green-600">{onlineCount}</p>
+              <p className="text-xs text-[#6B7280] flex items-center justify-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+                Online
+              </p>
+            </button>
+          )}
           <button
             onClick={() => onTabChange('classroom')}
             className="flex-1 hover:bg-[#F3F4F6] rounded-lg p-2 transition-colors"

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getStorefront, CreatorProfile } from '@/lib/creator';
+import { enrollFree } from '@/lib/payments';
 import {
   getPostsFeed,
   createPost,
@@ -28,16 +29,19 @@ import {
   MembershipStatus,
   CommunityVisibility,
   JoinRequestStatus,
+  FeedSort,
+  switchTier,
 } from '@/lib/community';
 import { formatPrice } from '@/lib/creator';
 import { getToken } from '@/lib/auth'; // used for getUserIdFromToken
-import { useCommunitySocket, MentionNotification } from '@/hooks/useCommunitySocket';
+import { useCommunitySocket, MentionNotification, PresenceUpdate } from '@/hooks/useCommunitySocket';
 import PostCard from '@/components/community/PostCard';
 import MentionInput from '@/components/community/MentionInput';
 import CommunitySidebar from '@/components/community/CommunitySidebar';
 import LeaderboardList from '@/components/community/LeaderboardList';
 import WelcomeCard from '@/components/community/WelcomeCard';
 import CalendarView from '@/components/community/CalendarView';
+import DirectMessages from '@/components/community/DirectMessages';
 
 type Tab = 'feed' | 'calendar' | 'classroom' | 'members' | 'leaderboard' | 'about';
 
@@ -115,6 +119,10 @@ function FeedTab({
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategoryId, setActiveCategoryId] = useState<string | undefined>(undefined);
+  const [feedSort, setFeedSort] = useState<FeedSort>('DEFAULT');
+  const [feedPage, setFeedPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [postContent, setPostContent] = useState('');
   const [postMentionMap, setPostMentionMap] = useState<Map<string, string>>(new Map());
   const [postCategory, setPostCategory] = useState<string>('');
@@ -126,23 +134,40 @@ function FeedTab({
   activeCatRef.current = activeCategoryId;
 
   const loadFeed = useCallback(
-    async (catId?: string, silent = false) => {
-      if (!silent) setLoading(true);
+    async (catId?: string, sort: FeedSort = 'DEFAULT', page = 1, append = false) => {
+      if (!append) setLoading(true);
+      else setLoadingMore(true);
       try {
-        const fetched = await getPostsFeed(communityId, catId);
-        setPosts(fetched);
+        const result = await getPostsFeed(communityId, catId, sort, page);
+        if (append) {
+          setPosts((prev) => [...prev, ...result.posts]);
+        } else {
+          setPosts(result.posts);
+        }
+        setHasMore(result.hasMore);
+        setFeedPage(result.page);
       } catch {
         // ignore
       } finally {
-        if (!silent) setLoading(false);
+        setLoading(false);
+        setLoadingMore(false);
       }
     },
     [communityId],
   );
 
   useEffect(() => {
-    loadFeed(activeCategoryId);
-  }, [loadFeed, activeCategoryId]);
+    loadFeed(activeCategoryId, feedSort, 1);
+  }, [loadFeed, activeCategoryId, feedSort]);
+
+  const handleSortChange = (sort: FeedSort) => {
+    setFeedSort(sort);
+    setFeedPage(1);
+  };
+
+  const handleLoadMore = () => {
+    loadFeed(activeCategoryId, feedSort, feedPage + 1, true);
+  };
 
   // WebSocket: one persistent connection; server pushes all events instantly
   useCommunitySocket(communityId, {
@@ -332,38 +357,50 @@ function FeedTab({
         </div>
       )}
 
-      {/* Category filter pills */}
-      {categories.length > 0 && (
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setActiveCategoryId(undefined)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              !activeCategoryId
-                ? 'text-white'
-                : 'bg-white text-[#6B7280] hover:bg-[#F3F4F6]'
-            }`}
-            style={!activeCategoryId ? { background: brand } : {}}
-          >
-            All
-          </button>
-          {categories.map((cat) => (
+      {/* Category filter pills + Sort */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {categories.length > 0 && (
+          <>
             <button
-              key={cat.id}
-              onClick={() =>
-                setActiveCategoryId(activeCategoryId === cat.id ? undefined : cat.id)
-              }
+              onClick={() => setActiveCategoryId(undefined)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                activeCategoryId === cat.id
+                !activeCategoryId
                   ? 'text-white'
                   : 'bg-white text-[#6B7280] hover:bg-[#F3F4F6]'
               }`}
-              style={activeCategoryId === cat.id ? { background: brand } : {}}
+              style={!activeCategoryId ? { background: brand } : {}}
             >
-              {cat.emoji} {cat.name}
+              All
             </button>
-          ))}
-        </div>
-      )}
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() =>
+                  setActiveCategoryId(activeCategoryId === cat.id ? undefined : cat.id)
+                }
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  activeCategoryId === cat.id
+                    ? 'text-white'
+                    : 'bg-white text-[#6B7280] hover:bg-[#F3F4F6]'
+                }`}
+                style={activeCategoryId === cat.id ? { background: brand } : {}}
+              >
+                {cat.emoji} {cat.name}
+              </button>
+            ))}
+          </>
+        )}
+        <select
+          value={feedSort}
+          onChange={(e) => handleSortChange(e.target.value as FeedSort)}
+          className="ml-auto text-sm border border-[#6B7280]/20 rounded-lg px-3 py-1.5 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488] bg-white"
+        >
+          <option value="DEFAULT">Default</option>
+          <option value="NEW">New</option>
+          <option value="TOP">Top</option>
+          <option value="UNREAD">Unread</option>
+        </select>
+      </div>
 
       {/* Posts */}
       {loading ? (
@@ -377,19 +414,30 @@ function FeedTab({
           <p className="text-sm text-[#6B7280] mt-1">Be the first to start a conversation!</p>
         </div>
       ) : (
-        posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            communityId={communityId}
-            currentUserId={currentUserId ?? ''}
-            currentUserRole={currentUserRole}
-            onUpdate={(updated) =>
-              setPosts((ps) => ps.map((p) => (p.id === updated.id ? updated : p)))
-            }
-            onDelete={(postId) => setPosts((ps) => ps.filter((p) => p.id !== postId))}
-          />
-        ))
+        <>
+          {posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              communityId={communityId}
+              currentUserId={currentUserId ?? ''}
+              currentUserRole={currentUserRole}
+              onUpdate={(updated) =>
+                setPosts((ps) => ps.map((p) => (p.id === updated.id ? updated : p)))
+              }
+              onDelete={(postId) => setPosts((ps) => ps.filter((p) => p.id !== postId))}
+            />
+          ))}
+          {hasMore && (
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="w-full py-3 rounded-xl bg-white shadow-sm text-sm font-medium text-[#6B7280] hover:text-[#1F2937] hover:bg-[#F3F4F6] transition-colors disabled:opacity-50"
+            >
+              {loadingMore ? 'Loading...' : 'Load more posts'}
+            </button>
+          )}
+        </>
       )}
     </div>
   );
@@ -444,8 +492,10 @@ function ClassroomTab({
   slug: string;
   brand: string;
 }) {
+  const router = useRouter();
   const [courses, setCourses] = useState<CommunityClassroomCourse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrollingId, setEnrollingId] = useState<string | null>(null);
 
   useEffect(() => {
     getCommunityClassroom(communityId)
@@ -453,6 +503,19 @@ function ClassroomTab({
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [communityId]);
+
+  const handleEnrollFree = async (courseId: string) => {
+    setEnrollingId(courseId);
+    try {
+      await enrollFree(courseId, 'self_paced', communityId);
+      router.push(`/learn/${courseId}`);
+    } catch {
+      // Fall back to course page if enrollment fails
+      router.push(`/${slug}/courses/${courseId}`);
+    } finally {
+      setEnrollingId(null);
+    }
+  };
 
   if (loading)
     return (
@@ -518,6 +581,15 @@ function ClassroomTab({
                 >
                   Continue Learning →
                 </Link>
+              ) : isFreeForMember ? (
+                <button
+                  onClick={() => handleEnrollFree(course.id)}
+                  disabled={enrollingId === course.id}
+                  className="w-full text-center text-white font-semibold px-4 py-2 rounded-lg text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+                  style={{ background: brand }}
+                >
+                  {enrollingId === course.id ? 'Enrolling...' : 'Enroll Free →'}
+                </button>
               ) : (
                 <Link
                   href={`/${slug}/courses/${course.id}`}
@@ -532,7 +604,7 @@ function ClassroomTab({
                     (e.currentTarget as HTMLElement).style.color = brand;
                   }}
                 >
-                  {isFreeForMember ? 'Enroll Free →' : 'View Course'}
+                  View Course
                 </Link>
               )}
             </div>
@@ -554,10 +626,14 @@ function MembersTab({
   communityId,
   currentUserId,
   currentUserRole,
+  onlineUserIds,
+  onOpenDm,
 }: {
   communityId: string;
   currentUserId: string | null;
   currentUserRole: CommunityRole | null;
+  onlineUserIds: string[];
+  onOpenDm?: (targetUserId: string) => void;
 }) {
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [search, setSearch] = useState('');
@@ -618,16 +694,39 @@ function MembersTab({
           const isMe = member.id === currentUserId;
           const isOwnerEntry = member.communityRole === 'OWNER';
           const isModerating = actionLoading === member.id;
+          const isOnline = onlineUserIds.includes(member.id);
           return (
             <div
               key={member.id}
               className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3"
             >
-              <Avatar name={member.name} avatarUrl={member.avatarUrl} size="md" />
+              <div className="relative flex-shrink-0">
+                <Avatar name={member.name} avatarUrl={member.avatarUrl} size="md" />
+                {isOnline && (
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white" />
+                )}
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-[#1F2937] text-sm truncate">{member.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-[#1F2937] text-sm truncate">{member.name}</p>
+                  {member.tierName && member.communityRole === 'MEMBER' && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#0D9488]/10 text-[#0D9488] font-medium whitespace-nowrap">
+                      {member.tierName}
+                    </span>
+                  )}
+                </div>
                 <RoleBadge role={member.communityRole} />
               </div>
+              {/* Chat button — not for self */}
+              {!isMe && onOpenDm && (
+                <button
+                  onClick={() => onOpenDm(member.id)}
+                  className="text-xs px-2 py-1 rounded-lg bg-[#0D9488]/10 text-[#0D9488] hover:bg-[#0D9488]/20 transition-colors flex-shrink-0"
+                  title={`Chat with ${member.name}`}
+                >
+                  Chat
+                </button>
+              )}
               {/* Role management — only visible to OWNER, not for self or other owners */}
               {currentUserRole === 'OWNER' && !isMe && !isOwnerEntry && (
                 <div className="flex items-center gap-1 flex-shrink-0">
@@ -716,15 +815,45 @@ function LeaderboardTab({ communityId }: { communityId: string }) {
 function AboutTab({
   profile,
   community,
+  communityId,
   quickLinks,
   memberCount,
+  membershipStatus,
+  slug,
 }: {
   profile: CreatorProfile;
   community: { name: string; description: string | null };
+  communityId: string;
   quickLinks: QuickLink[];
   memberCount: number;
+  membershipStatus: MembershipStatus | null;
+  slug: string;
 }) {
   const brand = profile.brandColor ?? '#0D9488';
+  const allTiers = membershipStatus?.allTiers ?? [];
+  const currentTierId = membershipStatus?.membership?.tier?.id ?? null;
+  const [switching, setSwitching] = useState<string | null>(null);
+  const [switchMsg, setSwitchMsg] = useState<string | null>(null);
+
+  const handleSwitchTier = async (targetTierId: string) => {
+    setSwitching(targetTierId);
+    setSwitchMsg(null);
+    try {
+      const result = await switchTier(communityId, targetTierId);
+      if (result.action === 'checkout') {
+        // Redirect to storefront checkout
+        window.location.href = `/${slug}#membership`;
+      } else {
+        setSwitchMsg(result.message);
+        // Refresh page after a short delay to reflect the change
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } catch (err: any) {
+      setSwitchMsg(err.message || 'Failed to switch tier.');
+    } finally {
+      setSwitching(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -737,6 +866,89 @@ function AboutTab({
           <span>👥 {memberCount} members</span>
         </div>
       </div>
+
+      {/* Membership Tiers */}
+      {allTiers.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="font-semibold text-[#1F2937] mb-4">Membership Tiers</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {allTiers.map((tier) => {
+              const isCurrent = tier.id === currentTierId;
+              const isFree = tier.priceMonthly === 0;
+              const fmt = (cents: number) =>
+                cents === 0
+                  ? 'Free'
+                  : new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: tier.currency,
+                      minimumFractionDigits: 0,
+                    }).format(cents / 100);
+
+              return (
+                <div
+                  key={tier.id}
+                  className={`rounded-xl border-2 p-5 transition-colors ${
+                    isCurrent ? 'border-[#0D9488] bg-teal-50/30' : 'border-[#F3F4F6]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-semibold text-[#1F2937]">{tier.name}</h4>
+                    {isCurrent && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[#0D9488] text-white font-medium">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  {tier.description && (
+                    <p className="text-sm text-[#6B7280] mb-3">{tier.description}</p>
+                  )}
+                  <div className="text-sm space-y-1 mb-4">
+                    <p className="font-semibold text-[#1F2937]">{fmt(tier.priceMonthly)}{!isFree && '/mo'}</p>
+                    {tier.priceAnnual > 0 && (
+                      <p className="text-[#6B7280]">{fmt(tier.priceAnnual)}/yr</p>
+                    )}
+                  </div>
+                  {!isCurrent && membershipStatus?.hasMembership && (
+                    <button
+                      onClick={() => handleSwitchTier(tier.id)}
+                      disabled={switching === tier.id}
+                      className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                      style={{ background: brand }}
+                    >
+                      {switching === tier.id
+                        ? 'Switching…'
+                        : tier.priceMonthly > (membershipStatus?.membership?.tier?.priceMonthly ?? 0)
+                          ? 'Upgrade'
+                          : 'Switch'}
+                    </button>
+                  )}
+                  {!isCurrent && !membershipStatus?.hasMembership && !isFree && (
+                    <Link
+                      href={`/${slug}#membership`}
+                      className="inline-block text-sm font-semibold px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90"
+                      style={{ background: brand }}
+                    >
+                      Join
+                    </Link>
+                  )}
+                  {!isCurrent && !membershipStatus?.hasMembership && isFree && (
+                    <Link
+                      href={`/${slug}#membership`}
+                      className="inline-block text-sm font-semibold px-4 py-2 rounded-lg border-2 transition-colors hover:text-white"
+                      style={{ borderColor: brand, color: brand }}
+                    >
+                      Join Free
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {switchMsg && (
+            <p className="mt-3 text-sm text-[#0D9488] font-medium">{switchMsg}</p>
+          )}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h3 className="font-semibold text-[#1F2937] mb-4">About the Creator</h3>
@@ -1116,6 +1328,9 @@ export default function CommunityHubPage() {
   const [membershipStatus, setMembershipStatus] = useState<MembershipStatus | null>(null);
   const [mentionNotifs, setMentionNotifs] = useState<MentionNotification[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
+  const [dmOpen, setDmOpen] = useState(false);
+  const [dmTargetUserId, setDmTargetUserId] = useState<string | undefined>();
 
   const communityId = searchParams.get('id');
 
@@ -1144,6 +1359,28 @@ export default function CommunityHubPage() {
   const setTab = (tab: string) => {
     router.push(`/${slug}/community?tab=${tab}`, { scroll: false });
   };
+
+  // Resolve the community ID early so the hook can be called unconditionally
+  const resolvedCommunityId = (() => {
+    if (!profile) return undefined;
+    const comms = profile.communities ?? [];
+    const c = communityId
+      ? comms.find((x) => x.id === communityId)
+      : comms.find((x) => x.isFeatured) ?? comms[0];
+    return c?.id;
+  })();
+
+  // Hub-level socket for presence + DM events (must be before early returns)
+  useCommunitySocket(resolvedCommunityId, {
+    onPresenceUpdate: (data: PresenceUpdate) => {
+      setOnlineUserIds(data.onlineUserIds);
+    },
+    onDmReceived: () => {
+      // DM panel handles its own refresh
+    },
+    onMentionReceived: (notif) =>
+      setMentionNotifs((prev) => [notif, ...prev].slice(0, 10)),
+  });
 
   if (loading || !profile) {
     return (
@@ -1195,6 +1432,11 @@ export default function CommunityHubPage() {
     window.location.reload();
   };
 
+  const openDm = (targetUserId?: string) => {
+    setDmTargetUserId(targetUserId);
+    setDmOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-[#F3F4F6]">
       {/* Top header */}
@@ -1213,8 +1455,18 @@ export default function CommunityHubPage() {
               </span>
               {community.name}
             </Link>
-            {currentUserId && (
+            {currentUserId && isMember && (
               <div className="ml-auto flex items-center gap-3">
+                {/* DM chat icon */}
+                <button
+                  onClick={() => openDm()}
+                  className="p-1.5 text-[#6B7280] hover:text-[#1F2937] transition-colors"
+                  title="Messages"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </button>
                 {/* Notification bell */}
                 <div className="relative">
                   <button
@@ -1365,6 +1617,8 @@ export default function CommunityHubPage() {
                 communityId={community.id}
                 currentUserId={currentUserId}
                 currentUserRole={currentUserRole}
+                onlineUserIds={onlineUserIds}
+                onOpenDm={currentUserId ? openDm : undefined}
               />
             )}
             {isMember && activeTab === 'leaderboard' && <LeaderboardTab communityId={community.id} />}
@@ -1372,8 +1626,11 @@ export default function CommunityHubPage() {
               <AboutTab
                 profile={profile}
                 community={community}
+                communityId={community.id}
                 quickLinks={quickLinks}
                 memberCount={memberCount}
+                membershipStatus={membershipStatus}
+                slug={slug as string}
               />
             )}
           </div>
@@ -1385,6 +1642,7 @@ export default function CommunityHubPage() {
               communityName={community.name}
               description={community.description}
               memberCount={memberCount}
+              onlineCount={onlineUserIds.length}
               courseCount={community._count?.courses ?? 0}
               quickLinks={quickLinks}
               leaderboard={leaderboard}
@@ -1393,6 +1651,19 @@ export default function CommunityHubPage() {
           </div>
         </div>
       </div>
+
+      {/* Direct Messages slide-in panel */}
+      {dmOpen && currentUserId && (
+        <DirectMessages
+          communityId={community.id}
+          currentUserId={currentUserId}
+          targetUserId={dmTargetUserId}
+          onClose={() => {
+            setDmOpen(false);
+            setDmTargetUserId(undefined);
+          }}
+        />
+      )}
     </div>
   );
 }

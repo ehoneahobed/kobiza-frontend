@@ -156,74 +156,95 @@ export default function CoursesPage() {
       {/* Create Course Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-8 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-[#1F2937] mb-1">Create a New Course</h2>
-            <p className="text-sm text-[#6B7280] mb-6">Set up dual-track pricing from the start.</p>
+            <p className="text-sm text-[#6B7280] mb-6">Set up your course details and dual-track pricing.</p>
 
-            <form onSubmit={handleCreate} className="space-y-4">
-              <Input
-                label="Course Title"
-                placeholder="e.g. Build a SaaS in 30 Days"
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                required
-              />
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-[#1F2937]">Description (optional)</label>
-                <textarea
-                  placeholder="What will students learn?"
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  rows={2}
-                  className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none"
+            <form onSubmit={handleCreate} className="space-y-6">
+              {/* Section: Course Details */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-[#1F2937] uppercase tracking-wide border-b border-[#F3F4F6] pb-2">Course Details</h3>
+                <Input
+                  label="Course Title"
+                  placeholder="e.g. Build a SaaS in 30 Days"
+                  value={form.title}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  required
+                />
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-[#1F2937]">Description (optional)</label>
+                  <textarea
+                    placeholder="What will students learn?"
+                    value={form.description}
+                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                    rows={3}
+                    className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none"
+                  />
+                </div>
+                <Input
+                  label="Cover Image URL (optional)"
+                  placeholder="https://..."
+                  value={form.coverUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, coverUrl: e.target.value }))}
                 />
               </div>
-              <Input
-                label="Cover Image URL (optional)"
-                placeholder="https://..."
-                value={form.coverUrl}
-                onChange={(e) => setForm((f) => ({ ...f, coverUrl: e.target.value }))}
-              />
 
-              {/* Dual-track pricing */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-[#F3F4F6] p-4">
-                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-2">Self-Paced</p>
-                  <Input
-                    label="Price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="49.00"
-                    value={form.priceSelfPaced}
-                    onChange={(e) => setForm((f) => ({ ...f, priceSelfPaced: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="rounded-xl border border-[#0D9488] bg-teal-50/40 p-4">
-                  <p className="text-xs font-semibold text-[#0D9488] uppercase tracking-wide mb-2">Accountability ★</p>
-                  <Input
-                    label="Price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="149.00"
-                    value={form.priceAccountability}
-                    onChange={(e) => setForm((f) => ({ ...f, priceAccountability: e.target.value }))}
-                    required
-                  />
+              {/* Section: Pricing */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-[#1F2937] uppercase tracking-wide border-b border-[#F3F4F6] pb-2">Pricing</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-[#F3F4F6] p-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">📖</span>
+                      <p className="text-sm font-semibold text-[#1F2937]">Self-Paced</p>
+                    </div>
+                    <p className="text-xs text-[#6B7280] mb-3">Students learn at their own speed with lifetime access.</p>
+                    <Input
+                      label="Price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="49.00"
+                      value={form.priceSelfPaced}
+                      onChange={(e) => setForm((f) => ({ ...f, priceSelfPaced: e.target.value }))}
+                      required
+                    />
+                    <p className="text-xs text-[#6B7280] mt-1">Set to 0 for free access</p>
+                  </div>
+                  <div className="rounded-xl border-2 border-[#0D9488] bg-teal-50/30 p-5">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">🎯</span>
+                      <p className="text-sm font-semibold text-[#0D9488]">Accountability</p>
+                    </div>
+                    <p className="text-xs text-[#6B7280] mb-3">Includes deadlines, submissions, and direct feedback.</p>
+                    <Input
+                      label="Price"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="149.00"
+                      value={form.priceAccountability}
+                      onChange={(e) => setForm((f) => ({ ...f, priceAccountability: e.target.value }))}
+                      required
+                    />
+                    <p className="text-xs text-[#6B7280] mt-1">Typically 2-3x self-paced</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-[#1F2937]">Currency</label>
-                <select
-                  value={form.currency}
-                  onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                  className="rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
-                >
-                  {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
-                </select>
+              {/* Section: Settings */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-[#1F2937] uppercase tracking-wide border-b border-[#F3F4F6] pb-2">Settings</h3>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-[#1F2937]">Currency</label>
+                  <select
+                    value={form.currency}
+                    onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
+                    className="rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]"
+                  >
+                    {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
               </div>
 
               {error && (

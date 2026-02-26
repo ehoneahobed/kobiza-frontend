@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch, API_URL } from './api';
 import { getToken } from './auth';
 
 // ── Course Outline ─────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ export async function generateCourseOutline(
 
 // ── SSE Stream helpers ─────────────────────────────────────────────────────
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+const API_BASE = `${API_URL}/api`;
 
 /**
  * Opens an SSE stream to an AI endpoint. Calls `onChunk` for each streamed

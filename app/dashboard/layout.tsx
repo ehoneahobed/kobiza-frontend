@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { clearToken } from '@/lib/auth';
 import { getMyProfile, CreatorProfile } from '@/lib/creator';
 import { getMyPlan, PlanTier } from '@/lib/billing';
+import NotificationBell from '@/components/NotificationBell';
 
 const navItems = [
   { label: 'Overview', href: '/dashboard', icon: '⊞' },
@@ -16,6 +17,7 @@ const navItems = [
   { label: 'Submissions', href: '/dashboard/submissions', icon: '📋' },
   { label: 'AI Architect', href: '/dashboard/courses/ai-architect', icon: '✨', pro: true },
   { label: 'Content Engine', href: '/dashboard/content-engine', icon: '🔄', pro: true },
+  { label: 'Earnings', href: '/dashboard/earnings', icon: '💰' },
   { label: 'Billing', href: '/dashboard/billing', icon: '💳' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
 ];
@@ -130,7 +132,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 ml-60 p-8">{children}</main>
+      <main className="flex-1 ml-60">
+        {/* Top bar */}
+        <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#F3F4F6] px-8 py-3 flex items-center justify-end">
+          <NotificationBell />
+        </div>
+        <div className="p-8">{children}</div>
+      </main>
     </div>
   );
 }

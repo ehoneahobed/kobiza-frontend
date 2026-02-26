@@ -118,7 +118,7 @@ export default function DashboardPage() {
 
   const hasCommunity = (profile?.communities?.length ?? 0) > 0;
   const slug = profile?.slug ?? '';
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://Kobiza.com';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const storefrontUrl = `${origin}/${slug}`;
 
   return (

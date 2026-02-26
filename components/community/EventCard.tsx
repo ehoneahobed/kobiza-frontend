@@ -35,21 +35,42 @@ function formatEventDate(startsAt: string, endsAt: string) {
 export default function EventCard({ event, onRsvpChange, slug }: EventCardProps) {
   const [myRsvp, setMyRsvp] = useState<RsvpStatus | null>(event.myRsvp);
   const [loading, setLoading] = useState(false);
+  const [counts, setCounts] = useState(event.rsvpCount);
 
   const handleRsvp = async (status: RsvpStatus) => {
     setLoading(true);
+    const prevRsvp = myRsvp;
+    const prevCounts = { ...counts };
+
+    // Optimistic update
+    const newCounts = { ...counts };
+    if (prevRsvp === 'GOING') newCounts.going = Math.max(0, newCounts.going - 1);
+    if (prevRsvp === 'MAYBE') newCounts.maybe = Math.max(0, newCounts.maybe - 1);
+
+    if (prevRsvp === status) {
+      // Toggling off
+      setMyRsvp(null);
+      setCounts(newCounts);
+    } else {
+      // Setting new status
+      if (status === 'GOING') newCounts.going += 1;
+      if (status === 'MAYBE') newCounts.maybe += 1;
+      setMyRsvp(status);
+      setCounts(newCounts);
+    }
+
     try {
-      if (myRsvp === status) {
+      if (prevRsvp === status) {
         await cancelRsvp(event.id);
-        setMyRsvp(null);
         onRsvpChange?.(event.id, null);
       } else {
         await rsvpEvent(event.id, status);
-        setMyRsvp(status);
         onRsvpChange?.(event.id, status);
       }
     } catch {
-      // ignore
+      // Revert on failure
+      setMyRsvp(prevRsvp);
+      setCounts(prevCounts);
     } finally {
       setLoading(false);
     }
@@ -123,7 +144,7 @@ export default function EventCard({ event, onRsvpChange, slug }: EventCardProps)
 
       <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
         <div className="text-xs text-gray-500">
-          {event.rsvpCount.going} going{event.rsvpCount.maybe > 0 ? ` · ${event.rsvpCount.maybe} maybe` : ''}
+          {counts.going} going{counts.maybe > 0 ? ` · ${counts.maybe} maybe` : ''}
           {event.maxAttendees && ` · ${event.maxAttendees} max`}
         </div>
 

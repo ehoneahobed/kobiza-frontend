@@ -41,10 +41,10 @@ export async function createCheckoutSession(
   });
 }
 
-export async function enrollFree(courseId: string, track: CourseTrack): Promise<Enrollment> {
+export async function enrollFree(courseId: string, track: CourseTrack, communityId?: string): Promise<Enrollment> {
   return apiFetch(`/courses/${courseId}/enroll`, {
     method: 'POST',
-    body: JSON.stringify({ track }),
+    body: JSON.stringify({ track, ...(communityId && { communityId }) }),
   });
 }
 

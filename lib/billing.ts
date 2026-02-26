@@ -54,3 +54,48 @@ export async function cancelBillingSubscription(): Promise<void> {
 export async function resumeBillingSubscription(): Promise<void> {
   return apiFetch('/billing/resume', { method: 'POST' });
 }
+
+// ── Stripe Connect ────────────────────────────────────────────────────
+
+export async function connectOnboard(): Promise<{ url: string }> {
+  return apiFetch('/billing/connect-onboard', { method: 'POST' });
+}
+
+export interface ConnectStatus {
+  connected: boolean;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+}
+
+export async function getConnectStatus(): Promise<ConnectStatus> {
+  return apiFetch('/billing/connect-status');
+}
+
+// ── Earnings ────────────────────────────────────────────────────────
+
+export interface Earnings {
+  totalRevenue: number;
+  totalFees: number;
+  netEarnings: number;
+  currency: string;
+  breakdown: Record<string, { revenue: number; fees: number; count: number }>;
+}
+
+export interface PayoutRecord {
+  id: string;
+  stripePayoutId: string | null;
+  amountCents: number;
+  currency: string;
+  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
+  periodStart: string | null;
+  periodEnd: string | null;
+  createdAt: string;
+}
+
+export async function getEarnings(): Promise<Earnings> {
+  return apiFetch('/billing/earnings');
+}
+
+export async function getPayouts(): Promise<PayoutRecord[]> {
+  return apiFetch('/billing/payouts');
+}

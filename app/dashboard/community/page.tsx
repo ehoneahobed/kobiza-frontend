@@ -166,7 +166,7 @@ export default function CommunityPage() {
     if (activeTab === 'feed') {
       setFeedLoading(true);
       getPostsFeed(community.id)
-        .then(setPosts)
+        .then((res) => setPosts(res.posts))
         .catch(() => {})
         .finally(() => setFeedLoading(false));
     }
@@ -178,7 +178,7 @@ export default function CommunityPage() {
     if (activeTab === 'feed' && community?.id) {
       setFeedLoading(true);
       getPostsFeed(community.id)
-        .then(setPosts)
+        .then((res) => setPosts(res.posts))
         .catch(() => {})
         .finally(() => setFeedLoading(false));
     }

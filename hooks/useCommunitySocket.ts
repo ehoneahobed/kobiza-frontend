@@ -13,6 +13,11 @@ export interface MentionNotification {
   postUrl: string;
 }
 
+export interface PresenceUpdate {
+  communityId: string;
+  onlineUserIds: string[];
+}
+
 export interface CommunitySocketHandlers {
   /** A new post was published by someone else */
   onNewPost?: (post: Post) => void;
@@ -30,6 +35,10 @@ export interface CommunitySocketHandlers {
   onReactionToggled?: (commentId: string, emoji: string, reactionCounts: { emoji: string; count: number }[], userId: string, reacted: boolean) => void;
   /** The current user was mentioned in a post or comment */
   onMentionReceived?: (notif: MentionNotification) => void;
+  /** Online presence updated */
+  onPresenceUpdate?: (data: PresenceUpdate) => void;
+  /** New DM received */
+  onDmReceived?: (data: { conversationId: string; message: any }) => void;
 }
 
 /**
@@ -135,6 +144,19 @@ export function useCommunitySocket(
 
       socket.on('mention:received', (notif: MentionNotification) => {
         handlersRef.current.onMentionReceived?.(notif);
+      });
+
+      socket.on('presence:update', (data: PresenceUpdate) => {
+        handlersRef.current.onPresenceUpdate?.(data);
+      });
+
+      socket.on('dm:new', (data: { conversationId: string; message: any }) => {
+        handlersRef.current.onDmReceived?.(data);
+      });
+
+      socket.on('notification:new', () => {
+        // Dispatch a custom window event so NotificationBell can refresh
+        window.dispatchEvent(new Event('notification:new'));
       });
 
       disconnect = () => {
