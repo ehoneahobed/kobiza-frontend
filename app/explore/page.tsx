@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -276,6 +276,20 @@ function SectionHeader({
 // ── Main Page ──────────────────────────────────────────────────────────────
 
 export default function ExplorePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-24">
+          <div className="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <ExploreContent />
+    </Suspense>
+  );
+}
+
+function ExploreContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 

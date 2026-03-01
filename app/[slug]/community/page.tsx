@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { getStorefront, CreatorProfile } from '@/lib/creator';
@@ -1315,6 +1315,20 @@ function LockedContentBanner({
 
 // ── Main Hub Page ──────────────────────────────────────────────────────────
 export default function CommunityHubPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-24">
+          <div className="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <CommunityHubContent />
+    </Suspense>
+  );
+}
+
+function CommunityHubContent() {
   const { slug } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
