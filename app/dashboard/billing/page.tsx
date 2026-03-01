@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   getMyPlan,
@@ -137,6 +137,20 @@ function PlanCard({
 }
 
 export default function BillingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-24">
+          <div className="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <BillingContent />
+    </Suspense>
+  );
+}
+
+function BillingContent() {
   const searchParams = useSearchParams();
   const [plan, setPlan] = useState<CreatorPlan | null>(null);
   const [loading, setLoading] = useState(true);
