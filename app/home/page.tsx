@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getMe, clearToken, AuthUser } from '@/lib/auth';
@@ -16,46 +16,87 @@ const NAV = [
   { label: 'Settings', href: '/home/settings', icon: '⚙' },
 ];
 
-function Sidebar({ user, onLogout }: { user: AuthUser | null; onLogout: () => void }) {
+function Sidebar({
+  user,
+  onLogout,
+  collapsed,
+  onToggle,
+}: {
+  user: AuthUser | null;
+  onLogout: () => void;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <aside className="w-56 bg-[#1F2937] flex flex-col fixed inset-y-0 left-0 z-20">
-      <div className="p-5 border-b border-white/10">
-        <Link href="/home" className="text-xl font-bold text-[#0D9488] block">
-          Kobiza
-        </Link>
-        <p className="text-xs text-white/40 mt-0.5">Learning Hub</p>
-      </div>
+    <>
+      {/* Mobile overlay */}
+      {!collapsed && (
+        <div
+          className="fixed inset-0 bg-black/40 z-20 lg:hidden"
+          onClick={onToggle}
+        />
+      )}
 
-      <nav className="flex-1 p-3 space-y-1">
-        {NAV.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <span className="text-base">{item.icon}</span>
-            {item.label}
+      <aside
+        className={`bg-[#1F2937] flex flex-col fixed inset-y-0 left-0 z-30 transition-all duration-200 ${
+          collapsed ? 'w-16' : 'w-56'
+        } ${collapsed ? '-translate-x-full lg:translate-x-0' : 'translate-x-0'}`}
+      >
+        <div className={`border-b border-white/10 flex items-center ${collapsed ? 'p-3 justify-center' : 'p-5 justify-between'}`}>
+          <Link href="/home" className={collapsed ? 'text-lg font-bold text-[#0D9488]' : 'text-xl font-bold text-[#0D9488] block'}>
+            {collapsed ? 'K' : 'Kobiza'}
           </Link>
-        ))}
-      </nav>
+          {!collapsed && <p className="text-xs text-white/40 mt-0.5 hidden">Learning Hub</p>}
+          <button
+            onClick={onToggle}
+            className="hidden lg:flex items-center justify-center w-6 h-6 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className={`w-4 h-4 transition-transform ${collapsed ? 'rotate-180' : ''}`}>
+              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 0 1-.02 1.06L8.832 10l3.938 3.71a.75.75 0 1 1-1.04 1.08l-4.5-4.25a.75.75 0 0 1 0-1.08l4.5-4.25a.75.75 0 0 1 1.06.02Z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
 
-      <div className="p-3 border-t border-white/10 space-y-1">
-        {user && (
-          <div className="flex items-center gap-2 px-3 py-2 mb-1">
-            <div className="w-7 h-7 rounded-full bg-[#0D9488]/20 flex items-center justify-center text-xs font-bold text-[#0D9488]">
-              {user.name.charAt(0).toUpperCase()}
+        <nav className="flex-1 p-3 space-y-1">
+          {NAV.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-lg text-sm font-medium text-white/60 hover:text-white hover:bg-white/10 transition-colors ${
+                collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
+              }`}
+              title={collapsed ? item.label : undefined}
+            >
+              <span className="text-base flex-shrink-0">{item.icon}</span>
+              {!collapsed && item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="p-3 border-t border-white/10 space-y-1">
+          {user && (
+            <div className={`flex items-center gap-2 py-2 mb-1 ${collapsed ? 'justify-center px-0' : 'px-3'}`}>
+              <div className="w-7 h-7 rounded-full bg-[#0D9488]/20 flex items-center justify-center text-xs font-bold text-[#0D9488] flex-shrink-0">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+              {!collapsed && (
+                <span className="text-xs text-white/60 truncate">{user.name}</span>
+              )}
             </div>
-            <span className="text-xs text-white/60 truncate">{user.name}</span>
-          </div>
-        )}
-        <button
-          onClick={onLogout}
-          className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-        >
-          Log out
-        </button>
-      </div>
-    </aside>
+          )}
+          <button
+            onClick={onLogout}
+            className={`w-full text-left rounded-lg text-sm text-white/50 hover:text-white hover:bg-white/10 transition-colors ${
+              collapsed ? 'px-2 py-2.5 text-center' : 'px-3 py-2.5'
+            }`}
+            title={collapsed ? 'Log out' : undefined}
+          >
+            {collapsed ? '↪' : 'Log out'}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -247,6 +288,9 @@ export default function MemberHomePage() {
     );
   }
 
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const toggleSidebar = useCallback(() => setSidebarCollapsed((p) => !p), []);
+
   const hasAnything = memberships.length > 0 || enrollments.length > 0 || myDownloads.length > 0 || myCoachingEnrollments.length > 0;
 
   const inProgress = enrollments.filter(
@@ -259,16 +303,28 @@ export default function MemberHomePage() {
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex">
-      <Sidebar user={user} onLogout={handleLogout} />
+      <Sidebar user={user} onLogout={handleLogout} collapsed={sidebarCollapsed} onToggle={toggleSidebar} />
 
-      <main className="flex-1 ml-56">
+      <main className={`flex-1 min-w-0 transition-all duration-200 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-56'}`}>
         {/* Top bar */}
-        <div className="bg-white border-b border-[#F3F4F6] px-8 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-[#1F2937]">
-              Welcome back{user ? `, ${user.name.split(' ')[0]}` : ''} 👋
-            </h1>
-            <p className="text-xs text-[#6B7280] mt-0.5">Your learning hub</p>
+        <div className="bg-white border-b border-[#F3F4F6] px-4 sm:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Mobile hamburger */}
+            <button
+              onClick={toggleSidebar}
+              className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <div>
+              <h1 className="text-xl font-bold text-[#1F2937]">
+                Welcome back{user ? `, ${user.name.split(' ')[0]}` : ''} 👋
+              </h1>
+              <p className="text-xs text-[#6B7280] mt-0.5">Your learning hub</p>
+            </div>
           </div>
           <Link
             href="/explore"
@@ -279,7 +335,7 @@ export default function MemberHomePage() {
           </Link>
         </div>
 
-        <div className="px-8 py-8 space-y-10 max-w-4xl">
+        <div className="px-4 sm:px-8 py-8 space-y-10">
 
           {/* ── Empty state: discover banner ── */}
           {!hasAnything && (
