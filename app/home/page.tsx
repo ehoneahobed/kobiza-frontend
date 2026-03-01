@@ -256,6 +256,8 @@ export default function MemberHomePage() {
   const [myDownloads, setMyDownloads] = useState<MyDownload[]>([]);
   const [myCoachingEnrollments, setMyCoachingEnrollments] = useState<CoachingEnrollment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const toggleSidebar = useCallback(() => setSidebarCollapsed((p) => !p), []);
 
   useEffect(() => {
     getMe()
@@ -287,9 +289,6 @@ export default function MemberHomePage() {
       </div>
     );
   }
-
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const toggleSidebar = useCallback(() => setSidebarCollapsed((p) => !p), []);
 
   const hasAnything = memberships.length > 0 || enrollments.length > 0 || myDownloads.length > 0 || myCoachingEnrollments.length > 0;
 
