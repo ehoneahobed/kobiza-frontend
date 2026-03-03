@@ -12,6 +12,7 @@ import { getMyEnrollments as getMyCoachingEnrollments, CoachingEnrollment, forma
 // ── Nav items ──────────────────────────────────────────────────────────────
 const NAV = [
   { label: 'My Learning', href: '/home', icon: '⊞' },
+  { label: 'Messages', href: '/home/messages', icon: '✉' },
   { label: 'Explore', href: '/explore', icon: '🔍' },
   { label: 'Settings', href: '/home/settings', icon: '⚙' },
 ];

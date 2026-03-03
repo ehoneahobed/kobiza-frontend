@@ -86,6 +86,9 @@ export default function MemberSettingsPage() {
           <Link href="/home" className="text-white/60 hover:text-white text-sm transition-colors">
             ← My Learning
           </Link>
+          <Link href="/home/messages" className="text-white/60 hover:text-white text-sm transition-colors">
+            ✉ Messages
+          </Link>
           <span className="text-white font-semibold ml-auto">Account Settings</span>
         </div>
       </header>

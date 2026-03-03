@@ -38,6 +38,14 @@ export interface MessagesResponse {
   hasMore: boolean;
 }
 
+export interface GlobalConversationSummary extends ConversationSummary {
+  communityName: string;
+}
+
+export async function getAllConversations(): Promise<GlobalConversationSummary[]> {
+  return apiFetch('/dm/conversations');
+}
+
 export async function getConversations(communityId: string): Promise<ConversationSummary[]> {
   return apiFetch(`/dm/${communityId}/conversations`);
 }
