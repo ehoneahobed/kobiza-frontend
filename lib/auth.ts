@@ -57,6 +57,10 @@ export async function updateMe(data: { name?: string; avatarUrl?: string }): Pro
   return apiFetch('/auth/me', { method: 'PATCH', body: JSON.stringify(data) });
 }
 
+export async function upgradeToCreator(): Promise<{ message: string; role: string }> {
+  return apiFetch('/auth/upgrade-to-creator', { method: 'POST' });
+}
+
 export function saveToken(token: string) {
   localStorage.setItem('Kobiza_token', token);
 }

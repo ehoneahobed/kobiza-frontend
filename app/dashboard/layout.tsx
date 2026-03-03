@@ -2,24 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { clearToken } from '@/lib/auth';
 import { getMyProfile, CreatorProfile } from '@/lib/creator';
 import { getMyPlan, PlanTier } from '@/lib/billing';
 import NotificationBell from '@/components/NotificationBell';
 
-const navItems = [
-  { label: 'Overview', href: '/dashboard', icon: '⊞' },
-  { label: 'Community', href: '/dashboard/community', icon: '👥' },
-  { label: 'Courses', href: '/dashboard/courses', icon: '🎓' },
-  { label: 'Downloads', href: '/dashboard/downloads', icon: '📥' },
-  { label: 'Coaching', href: '/dashboard/coaching', icon: '📅' },
-  { label: 'Submissions', href: '/dashboard/submissions', icon: '📋' },
-  { label: 'AI Architect', href: '/dashboard/courses/ai-architect', icon: '✨', pro: true },
-  { label: 'Content Engine', href: '/dashboard/content-engine', icon: '🔄', pro: true },
-  { label: 'Earnings', href: '/dashboard/earnings', icon: '💰' },
-  { label: 'Billing', href: '/dashboard/billing', icon: '💳' },
-  { label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
+type NavEntry =
+  | { type: 'link'; label: string; href: string; icon: string; pro?: boolean; external?: boolean }
+  | { type: 'separator' };
+
+const navItems: NavEntry[] = [
+  { type: 'link', label: 'Overview', href: '/dashboard', icon: '⊞' },
+  { type: 'link', label: 'Community', href: '/dashboard/community', icon: '👥' },
+  { type: 'link', label: 'Courses', href: '/dashboard/courses', icon: '🎓' },
+  { type: 'link', label: 'Downloads', href: '/dashboard/downloads', icon: '📥' },
+  { type: 'link', label: 'Coaching', href: '/dashboard/coaching', icon: '📅' },
+  { type: 'link', label: 'Submissions', href: '/dashboard/submissions', icon: '📋' },
+  { type: 'link', label: 'AI Architect', href: '/dashboard/courses/ai-architect', icon: '✨', pro: true },
+  { type: 'link', label: 'Content Engine', href: '/dashboard/content-engine', icon: '🔄', pro: true },
+  { type: 'link', label: 'Earnings', href: '/dashboard/earnings', icon: '💰' },
+  { type: 'link', label: 'Billing', href: '/dashboard/billing', icon: '💳' },
+  { type: 'link', label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
+  { type: 'separator' },
+  { type: 'link', label: 'Explore', href: '/explore', icon: '🔍', external: true },
+  { type: 'link', label: 'My Learning', href: '/home', icon: '📚', external: true },
 ];
 
 const PLAN_BADGE: Record<PlanTier, { label: string; cls: string }> = {
@@ -31,8 +38,14 @@ const PLAN_BADGE: Record<PlanTier, { label: string; cls: string }> = {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [planTier, setPlanTier] = useState<PlanTier>('FREE');
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('welcome') === '1') setShowWelcome(true);
+  }, [searchParams]);
 
   useEffect(() => {
     getMyProfile().then(setProfile).catch(() => { });
@@ -94,12 +107,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Nav */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const active =
-              item.href === '/dashboard'
+          {navItems.map((item, idx) => {
+            if (item.type === 'separator') {
+              return <div key={`sep-${idx}`} className="my-2 border-t border-white/10" />;
+            }
+            // External links (Explore, My Learning) are never "active" on dashboard pages
+            const active = item.external
+              ? false
+              : item.href === '/dashboard'
                 ? pathname === '/dashboard'
                 : pathname.startsWith(item.href);
-            const isProItem = (item as any).pro === true;
             return (
               <Link
                 key={item.href}
@@ -111,7 +128,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <span className="text-base">{item.icon}</span>
                 <span className="flex-1">{item.label}</span>
-                {isProItem && planTier !== 'PRO' && (
+                {item.pro && planTier !== 'PRO' && (
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full text-amber-300 bg-amber-400/10">
                     Pro
                   </span>
@@ -137,6 +154,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-[#F3F4F6] px-8 py-3 flex items-center justify-end">
           <NotificationBell />
         </div>
+        {showWelcome && (
+          <div className="mx-8 mt-6 bg-gradient-to-r from-[#0D9488] to-[#38BDF8] text-white rounded-xl p-5 flex items-center justify-between">
+            <div>
+              <p className="font-bold text-lg">Welcome to your Creator Dashboard!</p>
+              <p className="text-white/80 text-sm mt-1">
+                You&apos;re all set. Start by creating a community or exploring what others have built.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="text-white/60 hover:text-white text-xl ml-4 flex-shrink-0"
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
+          </div>
+        )}
         <div className="p-8">{children}</div>
       </main>
     </div>

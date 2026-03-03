@@ -194,14 +194,11 @@ export interface ExploreCourse {
   priceSelfPaced: number;
   priceAccountability: number;
   currency: string;
-  community: {
-    name: string;
-    creatorProfile: {
-      slug: string;
-      brandColor: string | null;
-      logoUrl: string | null;
-      user: { name: string };
-    };
+  creatorProfile: {
+    slug: string;
+    brandColor: string | null;
+    logoUrl: string | null;
+    user: { name: string };
   };
   _count: { enrollments: number; modules: number };
 }

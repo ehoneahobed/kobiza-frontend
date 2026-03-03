@@ -681,96 +681,145 @@ function MembersTab({
       </div>
     );
 
+  const owners = filtered.filter((m) => m.communityRole === 'OWNER');
+  const moderators = filtered.filter((m) => m.communityRole === 'MODERATOR');
+  const regularMembers = filtered.filter((m) => m.communityRole === 'MEMBER');
+  const sortedFiltered = [...owners, ...moderators, ...regularMembers];
+
   return (
     <div>
+      {/* Header with counts */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-[#0D9488] text-white">
+          Members {members.length}
+        </span>
+        {members.filter((m) => m.communityRole === 'OWNER' || m.communityRole === 'MODERATOR').length > 0 && (
+          <span className="text-xs font-medium px-3 py-1.5 rounded-full border border-[#E5E7EB] text-[#6B7280]">
+            Admins {members.filter((m) => m.communityRole === 'OWNER' || m.communityRole === 'MODERATOR').length}
+          </span>
+        )}
+        {onlineUserIds.length > 0 && (
+          <span className="text-xs font-medium px-3 py-1.5 rounded-full border border-[#E5E7EB] text-[#6B7280]">
+            Online {onlineUserIds.length}
+          </span>
+        )}
+      </div>
+
+      {/* Search */}
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search members…"
         className="w-full rounded-xl border border-[#F3F4F6] bg-white px-4 py-3 text-sm text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] mb-4 shadow-sm"
       />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {filtered.map((member) => {
+
+      {/* Member list — single column, full-width cards */}
+      <div className="space-y-3">
+        {sortedFiltered.map((member) => {
           const isMe = member.id === currentUserId;
           const isOwnerEntry = member.communityRole === 'OWNER';
           const isModerating = actionLoading === member.id;
           const isOnline = onlineUserIds.includes(member.id);
+          const joinedDate = member.joinedAt
+            ? new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            : null;
+          const canManage = currentUserRole === 'OWNER' && !isMe && !isOwnerEntry;
+          const canModRemove = currentUserRole === 'MODERATOR' && !isMe && member.communityRole === 'MEMBER';
+
           return (
             <div
               key={member.id}
-              className="bg-white rounded-xl shadow-sm p-4 flex items-center gap-3"
+              className="bg-white rounded-xl shadow-sm p-5 transition-shadow hover:shadow-md"
             >
-              <div className="relative flex-shrink-0">
-                <Avatar name={member.name} avatarUrl={member.avatarUrl} size="md" />
-                {isOnline && (
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white" />
+              {/* Top row: avatar + info + chat button */}
+              <div className="flex items-start gap-4">
+                <div className="relative flex-shrink-0">
+                  <Avatar name={member.name} avatarUrl={member.avatarUrl} size="lg" />
+                  {isOnline && (
+                    <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" />
+                  )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-[#1F2937] text-base">{member.name}</p>
+                    {member.tierName && member.communityRole === 'MEMBER' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0D9488]/10 text-[#0D9488] font-semibold">
+                        {member.tierName}
+                      </span>
+                    )}
+                  </div>
+                  <RoleBadge role={member.communityRole} />
+
+                  {/* Metadata row */}
+                  <div className="flex items-center gap-4 mt-2 text-xs text-[#6B7280]">
+                    {isOnline && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-green-500" />
+                        Online
+                      </span>
+                    )}
+                    {joinedDate && (
+                      <span className="flex items-center gap-1.5">
+                        <span>📅</span>
+                        Joined {joinedDate}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Chat button — not for self */}
+                {!isMe && onOpenDm && (
+                  <button
+                    onClick={() => onOpenDm(member.id)}
+                    className="text-xs font-medium px-3 py-2 rounded-lg border border-[#E5E7EB] text-[#6B7280] hover:border-[#0D9488] hover:text-[#0D9488] transition-colors flex-shrink-0 flex items-center gap-1.5"
+                    title={`Chat with ${member.name}`}
+                  >
+                    Chat <span>💬</span>
+                  </button>
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-[#1F2937] text-sm truncate">{member.name}</p>
-                  {member.tierName && member.communityRole === 'MEMBER' && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#0D9488]/10 text-[#0D9488] font-medium whitespace-nowrap">
-                      {member.tierName}
-                    </span>
+
+              {/* Admin action buttons — separate row so they don't crowd the name */}
+              {(canManage || canModRemove) && (
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[#F3F4F6]">
+                  {canManage && (
+                    <>
+                      {member.communityRole === 'MEMBER' ? (
+                        <button
+                          onClick={() => handleSetRole(member.id, 'MODERATOR')}
+                          disabled={isModerating}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                        >
+                          ⚡ Promote
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleSetRole(member.id, 'MEMBER')}
+                          disabled={isModerating}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] transition-colors disabled:opacity-50"
+                        >
+                          Demote
+                        </button>
+                      )}
+                    </>
                   )}
-                </div>
-                <RoleBadge role={member.communityRole} />
-              </div>
-              {/* Chat button — not for self */}
-              {!isMe && onOpenDm && (
-                <button
-                  onClick={() => onOpenDm(member.id)}
-                  className="text-xs px-2 py-1 rounded-lg bg-[#0D9488]/10 text-[#0D9488] hover:bg-[#0D9488]/20 transition-colors flex-shrink-0"
-                  title={`Chat with ${member.name}`}
-                >
-                  Chat
-                </button>
-              )}
-              {/* Role management — only visible to OWNER, not for self or other owners */}
-              {currentUserRole === 'OWNER' && !isMe && !isOwnerEntry && (
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {member.communityRole === 'MEMBER' ? (
+                  {(canManage || canModRemove) && (
                     <button
-                      onClick={() => handleSetRole(member.id, 'MODERATOR')}
+                      onClick={() => handleRemove(member.id, member.name)}
                       disabled={isModerating}
-                      className="text-xs px-2 py-1 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                      className="text-xs px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
                     >
-                      ⚡ Promote
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleSetRole(member.id, 'MEMBER')}
-                      disabled={isModerating}
-                      className="text-xs px-2 py-1 rounded-lg bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] transition-colors disabled:opacity-50"
-                    >
-                      Demote
+                      Remove
                     </button>
                   )}
-                  <button
-                    onClick={() => handleRemove(member.id, member.name)}
-                    disabled={isModerating}
-                    className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
-                  >
-                    Remove
-                  </button>
                 </div>
-              )}
-              {/* MODERATOR can remove plain members */}
-              {currentUserRole === 'MODERATOR' && !isMe && member.communityRole === 'MEMBER' && (
-                <button
-                  onClick={() => handleRemove(member.id, member.name)}
-                  disabled={isModerating}
-                  className="text-xs px-2 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50 flex-shrink-0"
-                >
-                  Remove
-                </button>
               )}
             </div>
           );
         })}
         {filtered.length === 0 && (
-          <p className="text-sm text-[#6B7280] col-span-2 text-center py-8">No members found.</p>
+          <p className="text-sm text-[#6B7280] text-center py-8">No members found.</p>
         )}
       </div>
     </div>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getMe, updateMe, forgotPassword, clearToken, AuthUser } from '@/lib/auth';
+import { getMe, updateMe, forgotPassword, upgradeToCreator, clearToken, AuthUser } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -22,6 +22,11 @@ export default function MemberSettingsPage() {
   // Password reset
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+
+  // Upgrade to creator
+  const [showUpgradeConfirm, setShowUpgradeConfirm] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState('');
 
   useEffect(() => {
     getMe()
@@ -62,6 +67,19 @@ export default function MemberSettingsPage() {
       setResetSent(true);
     } finally {
       setResetLoading(false);
+    }
+  };
+
+  const handleUpgradeToCreator = async () => {
+    setUpgrading(true);
+    setUpgradeError('');
+    try {
+      await upgradeToCreator();
+      router.push('/dashboard?welcome=1');
+    } catch (err: any) {
+      setUpgradeError(err.message ?? 'Failed to upgrade. Please try again.');
+    } finally {
+      setUpgrading(false);
     }
   };
 
@@ -189,6 +207,70 @@ export default function MemberSettingsPage() {
             </button>
           </div>
         </div>
+
+        {/* Become a Creator — only for members */}
+        {user?.role === 'MEMBER' && (
+          <div className="rounded-xl shadow-sm overflow-hidden bg-gradient-to-br from-[#1F2937] to-[#0D9488]">
+            <div className="p-6">
+              <h2 className="font-bold text-white text-lg mb-1">Become a Creator</h2>
+              <p className="text-white/70 text-sm mb-4">
+                Start building your own community, selling courses, and earning on Kobiza.
+              </p>
+
+              {!showUpgradeConfirm ? (
+                <button
+                  onClick={() => setShowUpgradeConfirm(true)}
+                  className="bg-[#F59E0B] hover:bg-amber-500 text-white font-bold px-6 py-3 rounded-xl text-sm transition-colors"
+                >
+                  Get Started as a Creator
+                </button>
+              ) : (
+                <div className="bg-white/10 backdrop-blur rounded-xl p-5 space-y-4">
+                  <p className="text-white font-semibold text-sm">Ready to upgrade?</p>
+                  <ul className="text-white/80 text-sm space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#F59E0B] mt-0.5">&#x2713;</span>
+                      <span>Free to start &mdash; no credit card required</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#F59E0B] mt-0.5">&#x2713;</span>
+                      <span>Create 1 community with courses, coaching &amp; downloads</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-[#F59E0B] mt-0.5">&#x2713;</span>
+                      <span>All your existing enrollments &amp; data are preserved</span>
+                    </li>
+                  </ul>
+
+                  {upgradeError && (
+                    <p className="text-sm text-red-300 bg-red-500/20 rounded-lg px-4 py-2">
+                      {upgradeError}
+                    </p>
+                  )}
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleUpgradeToCreator}
+                      disabled={upgrading}
+                      className="bg-[#F59E0B] hover:bg-amber-500 disabled:opacity-50 text-white font-bold px-6 py-3 rounded-xl text-sm transition-colors flex items-center gap-2"
+                    >
+                      {upgrading && (
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      )}
+                      Confirm &amp; Upgrade
+                    </button>
+                    <button
+                      onClick={() => { setShowUpgradeConfirm(false); setUpgradeError(''); }}
+                      className="text-white/60 hover:text-white text-sm transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ function CommunityCard({ item }: { item: ExploreCommunity }) {
 }
 
 function CourseCard({ item }: { item: ExploreCourse }) {
-  const creator = item.community.creatorProfile;
+  const creator = item.creatorProfile;
   const brand = creator.brandColor ?? '#0D9488';
   return (
     <Link

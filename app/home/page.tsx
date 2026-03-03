@@ -60,6 +60,21 @@ function Sidebar({
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
+          {user?.role === 'CREATOR' && (
+            <>
+              <Link
+                href="/dashboard"
+                className={`flex items-center gap-3 rounded-lg text-sm font-semibold text-[#0D9488] bg-[#0D9488]/10 hover:bg-[#0D9488]/20 transition-colors ${
+                  collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
+                }`}
+                title={collapsed ? 'Creator Dashboard' : undefined}
+              >
+                <span className="text-base flex-shrink-0">🎨</span>
+                {!collapsed && 'Creator Dashboard'}
+              </Link>
+              <div className="my-1.5 border-t border-white/10" />
+            </>
+          )}
           {NAV.map((item) => (
             <Link
               key={item.href}
@@ -263,7 +278,6 @@ export default function MemberHomePage() {
   useEffect(() => {
     getMe()
       .then((u) => {
-        if (u.role === 'CREATOR') { router.replace('/dashboard'); return; }
         setUser(u);
         Promise.all([
           getMyMemberships().catch(() => [] as MyMembership[]),
