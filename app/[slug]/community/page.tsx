@@ -1345,6 +1345,7 @@ function CommunityHubContent() {
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [dmOpen, setDmOpen] = useState(false);
   const [dmTargetUserId, setDmTargetUserId] = useState<string | undefined>();
+  const [incomingDm, setIncomingDm] = useState<{ conversationId: string; message: any } | null>(null);
 
   const communityId = searchParams.get('id');
 
@@ -1389,8 +1390,8 @@ function CommunityHubContent() {
     onPresenceUpdate: (data: PresenceUpdate) => {
       setOnlineUserIds(data.onlineUserIds);
     },
-    onDmReceived: () => {
-      // DM panel handles its own refresh
+    onDmReceived: (data) => {
+      setIncomingDm(data);
     },
     onMentionReceived: (notif) =>
       setMentionNotifs((prev) => [notif, ...prev].slice(0, 10)),
@@ -1672,9 +1673,12 @@ function CommunityHubContent() {
           communityId={community.id}
           currentUserId={currentUserId}
           targetUserId={dmTargetUserId}
+          incomingDm={incomingDm}
+          onIncomingDmProcessed={() => setIncomingDm(null)}
           onClose={() => {
             setDmOpen(false);
             setDmTargetUserId(undefined);
+            setIncomingDm(null);
           }}
         />
       )}
