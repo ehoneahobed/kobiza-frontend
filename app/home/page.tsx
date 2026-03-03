@@ -373,14 +373,14 @@ export default function MemberHomePage() {
               title="My Communities"
               icon="👥"
               count={memberships.length}
-              action={memberships.length > 0 ? { label: 'Explore more', href: '/explore' } : undefined}
+              action={memberships.length > 0 ? { label: 'Explore more', href: '/explore?type=communities' } : undefined}
             />
             {memberships.length === 0 ? (
               <EmptyCard
                 icon="👥"
                 title="No communities yet"
                 description="Join a creator's community to access their discussions, courses, and accountability coaching."
-                cta={{ label: 'Browse Communities →', href: '/explore' }}
+                cta={{ label: 'Browse Communities →', href: '/explore?type=communities' }}
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -395,14 +395,14 @@ export default function MemberHomePage() {
               title="My Courses"
               icon="🎓"
               count={enrollments.length}
-              action={enrollments.length > 0 ? { label: 'Explore courses', href: '/explore' } : undefined}
+              action={enrollments.length > 0 ? { label: 'Explore courses', href: '/explore?type=courses' } : undefined}
             />
             {enrollments.length === 0 ? (
               <EmptyCard
                 icon="🎓"
                 title="No courses yet"
                 description="Enroll in a course — choose Self-paced or Accountability Track for real coaching alongside your learning."
-                cta={{ label: 'Find Courses →', href: '/explore' }}
+                cta={{ label: 'Find Courses →', href: '/explore?type=courses' }}
                 badge="⚡ Accountability Track available"
               />
             ) : (
@@ -469,7 +469,7 @@ export default function MemberHomePage() {
               title="Coaching &amp; Sessions"
               icon="📅"
               count={myCoachingEnrollments.length}
-              action={myCoachingEnrollments.length > 0 ? { label: 'Explore coaching', href: '/explore' } : undefined}
+              action={myCoachingEnrollments.length > 0 ? { label: 'Explore coaching', href: '/explore?type=coaching' } : undefined}
             />
             {myCoachingEnrollments.length === 0 ? (
               <div className="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4">

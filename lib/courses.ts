@@ -122,7 +122,7 @@ export async function createCourse(data: {
   description?: string;
   coverUrl?: string;
   priceSelfPaced: number;
-  priceAccountability: number;
+  priceAccountability?: number;
   currency?: string;
 }): Promise<Course> {
   return apiFetch('/courses', { method: 'POST', body: JSON.stringify(data) });

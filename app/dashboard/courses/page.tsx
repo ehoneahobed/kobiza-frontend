@@ -39,6 +39,7 @@ export default function CoursesPage() {
     priceSelfPaced: '',
     priceAccountability: '',
     currency: 'USD',
+    enableAccountability: false,
   });
 
   // Classroom modal state
@@ -67,7 +68,9 @@ export default function CoursesPage() {
         description: form.description || undefined,
         coverUrl: form.coverUrl || undefined,
         priceSelfPaced: Math.round(parseFloat(form.priceSelfPaced || '0') * 100),
-        priceAccountability: Math.round(parseFloat(form.priceAccountability || '0') * 100),
+        ...(form.enableAccountability
+          ? { priceAccountability: Math.round(parseFloat(form.priceAccountability || '0') * 100) }
+          : {}),
         currency: form.currency,
       });
       router.push(`/dashboard/courses/${course.id}`);
@@ -190,25 +193,48 @@ export default function CoursesPage() {
               {/* Section: Pricing */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-[#1F2937] uppercase tracking-wide border-b border-[#F3F4F6] pb-2">Pricing</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl border border-[#F3F4F6] p-5">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">📖</span>
-                      <p className="text-sm font-semibold text-[#1F2937]">Self-Paced</p>
-                    </div>
-                    <p className="text-xs text-[#6B7280] mb-3">Students learn at their own speed with lifetime access.</p>
-                    <Input
-                      label="Price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="49.00"
-                      value={form.priceSelfPaced}
-                      onChange={(e) => setForm((f) => ({ ...f, priceSelfPaced: e.target.value }))}
-                      required
-                    />
-                    <p className="text-xs text-[#6B7280] mt-1">Set to 0 for free access</p>
+                <div className="rounded-xl border border-[#F3F4F6] p-5">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-lg">📖</span>
+                    <p className="text-sm font-semibold text-[#1F2937]">Self-Paced</p>
                   </div>
+                  <p className="text-xs text-[#6B7280] mb-3">Students learn at their own speed with lifetime access.</p>
+                  <Input
+                    label="Price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="49.00"
+                    value={form.priceSelfPaced}
+                    onChange={(e) => setForm((f) => ({ ...f, priceSelfPaced: e.target.value }))}
+                    required
+                  />
+                  <p className="text-xs text-[#6B7280] mt-1">Set to 0 for free access</p>
+                </div>
+
+                {/* Accountability toggle */}
+                <label className="flex items-center gap-3 cursor-pointer pt-2">
+                  <div
+                    onClick={() => setForm((f) => ({ ...f, enableAccountability: !f.enableAccountability }))}
+                    className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${
+                      form.enableAccountability ? 'bg-[#0D9488]' : 'bg-[#6B7280]'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                        form.enableAccountability ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-[#1F2937]">Enable Accountability Track</p>
+                    <p className="text-xs text-[#6B7280]">
+                      Offer a premium track with deadlines, submissions, and direct feedback.
+                    </p>
+                  </div>
+                </label>
+
+                {form.enableAccountability && (
                   <div className="rounded-xl border-2 border-[#0D9488] bg-teal-50/30 p-5">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">🎯</span>
@@ -227,7 +253,7 @@ export default function CoursesPage() {
                     />
                     <p className="text-xs text-[#6B7280] mt-1">Typically 2-3x self-paced</p>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Section: Settings */}
@@ -440,12 +466,14 @@ export default function CoursesPage() {
                         {formatPrice(course.priceSelfPaced, course.currency)}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-[#0D9488]">Accountability</p>
-                      <p className="font-semibold text-[#1F2937]">
-                        {formatPrice(course.priceAccountability, course.currency)}
-                      </p>
-                    </div>
+                    {course.priceAccountability > 0 && (
+                      <div className="text-right">
+                        <p className="text-xs text-[#0D9488]">Accountability</p>
+                        <p className="font-semibold text-[#1F2937]">
+                          {formatPrice(course.priceAccountability, course.currency)}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <button

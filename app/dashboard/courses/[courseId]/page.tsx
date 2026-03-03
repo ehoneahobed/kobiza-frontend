@@ -237,6 +237,7 @@ export default function CourseEditorPage() {
     priceSelfPaced: '',
     priceAccountability: '',
     currency: 'USD',
+    enableAccountability: false,
   });
 
   const [addingModule, setAddingModule] = useState(false);
@@ -252,8 +253,9 @@ export default function CourseEditorPage() {
           title: c.title,
           description: c.description ?? '',
           priceSelfPaced: (c.priceSelfPaced / 100).toFixed(2),
-          priceAccountability: (c.priceAccountability / 100).toFixed(2),
+          priceAccountability: c.priceAccountability > 0 ? (c.priceAccountability / 100).toFixed(2) : '',
           currency: c.currency,
+          enableAccountability: c.priceAccountability > 0,
         });
       })
       .catch(() => router.push('/dashboard/courses'))
@@ -269,7 +271,9 @@ export default function CourseEditorPage() {
         title: settingsForm.title,
         description: settingsForm.description || undefined,
         priceSelfPaced: Math.round(parseFloat(settingsForm.priceSelfPaced) * 100),
-        priceAccountability: Math.round(parseFloat(settingsForm.priceAccountability) * 100),
+        priceAccountability: settingsForm.enableAccountability
+          ? Math.round(parseFloat(settingsForm.priceAccountability || '0') * 100)
+          : 0,
         currency: settingsForm.currency,
       });
       setCourse(updated);
@@ -336,20 +340,22 @@ export default function CourseEditorPage() {
         </Button>
       </div>
 
-      {/* Dual-track pricing summary */}
-      <div className="grid grid-cols-2 gap-3 mb-8">
+      {/* Pricing summary */}
+      <div className={`grid gap-3 mb-8 ${course.priceAccountability > 0 ? 'grid-cols-2' : 'grid-cols-1 max-w-sm'}`}>
         <div className="bg-white rounded-xl border border-[#F3F4F6] p-4 text-center shadow-sm">
           <p className="text-xs text-[#6B7280] uppercase tracking-wide mb-1">Self-Paced</p>
           <p className="text-2xl font-bold text-[#1F2937]">
             {formatPrice(course.priceSelfPaced, course.currency)}
           </p>
         </div>
-        <div className="bg-white rounded-xl border border-[#0D9488] p-4 text-center shadow-sm">
-          <p className="text-xs text-[#0D9488] uppercase tracking-wide mb-1">Accountability ★</p>
-          <p className="text-2xl font-bold text-[#1F2937]">
-            {formatPrice(course.priceAccountability, course.currency)}
-          </p>
-        </div>
+        {course.priceAccountability > 0 && (
+          <div className="bg-white rounded-xl border border-[#0D9488] p-4 text-center shadow-sm">
+            <p className="text-xs text-[#0D9488] uppercase tracking-wide mb-1">Accountability ★</p>
+            <p className="text-2xl font-bold text-[#1F2937]">
+              {formatPrice(course.priceAccountability, course.currency)}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Course settings */}
@@ -369,17 +375,40 @@ export default function CourseEditorPage() {
             rows={2}
           />
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-[#F3F4F6] p-4">
-              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-2">Self-Paced Price</p>
-              <Input
-                label=""
-                type="number" min="0" step="0.01" placeholder="49.00"
-                value={settingsForm.priceSelfPaced}
-                onChange={(e) => setSettingsForm((f) => ({ ...f, priceSelfPaced: e.target.value }))}
-                required
+          <div className="rounded-xl border border-[#F3F4F6] p-4">
+            <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wide mb-2">Self-Paced Price</p>
+            <Input
+              label=""
+              type="number" min="0" step="0.01" placeholder="49.00"
+              value={settingsForm.priceSelfPaced}
+              onChange={(e) => setSettingsForm((f) => ({ ...f, priceSelfPaced: e.target.value }))}
+              required
+            />
+          </div>
+
+          {/* Accountability toggle */}
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              onClick={() => setSettingsForm((f) => ({ ...f, enableAccountability: !f.enableAccountability }))}
+              className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${
+                settingsForm.enableAccountability ? 'bg-[#0D9488]' : 'bg-[#6B7280]'
+              }`}
+            >
+              <span
+                className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  settingsForm.enableAccountability ? 'translate-x-5' : 'translate-x-1'
+                }`}
               />
             </div>
+            <div>
+              <p className="text-sm font-medium text-[#1F2937]">Enable Accountability Track</p>
+              <p className="text-xs text-[#6B7280]">
+                Offer a premium track with deadlines, submissions, and direct feedback.
+              </p>
+            </div>
+          </label>
+
+          {settingsForm.enableAccountability && (
             <div className="rounded-xl border border-[#0D9488] bg-teal-50/40 p-4">
               <p className="text-xs font-semibold text-[#0D9488] uppercase tracking-wide mb-2">Accountability Price</p>
               <Input
@@ -390,7 +419,7 @@ export default function CourseEditorPage() {
                 required
               />
             </div>
-          </div>
+          )}
 
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium text-[#1F2937]">Currency</label>
