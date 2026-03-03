@@ -10,13 +10,26 @@ export interface LessonSubmission {
   feedback?: { id: string; feedbackContent: string; createdAt: string } | null;
 }
 
+export interface LessonProgressRecord {
+  lessonId: string;
+  completedAt: string;
+}
+
+export interface MarkCompleteResponse {
+  courseCompleted: boolean;
+  completedCount: number;
+  totalCount: number;
+}
+
 export interface CourseEnrollment {
   id: string;
   userId: string;
   courseId: string;
   track: 'SELF_PACED' | 'ACCOUNTABILITY';
+  status: 'ACTIVE' | 'COMPLETED';
   enrolledAt: string;
   submissions?: LessonSubmission[];
+  progress?: LessonProgressRecord[];
 }
 
 export interface Lesson {
@@ -204,9 +217,11 @@ export async function deleteLesson(courseId: string, moduleId: string, lessonId:
 export interface MyEnrollment {
   id: string;
   track: 'SELF_PACED' | 'ACCOUNTABILITY';
+  status: 'ACTIVE' | 'COMPLETED';
   enrolledAt: string;
   progress: { completed: number; total: number };
   firstLessonId: string | null;
+  nextIncompleteLessonId: string | null;
   course: {
     id: string;
     title: string;
@@ -219,6 +234,18 @@ export interface MyEnrollment {
 
 export async function getMyEnrollments(): Promise<MyEnrollment[]> {
   return apiFetch('/courses/my-enrollments');
+}
+
+// ── Lesson Progress ──────────────────────────────────────────────────────
+export async function markLessonComplete(courseId: string, lessonId: string): Promise<MarkCompleteResponse> {
+  return apiFetch(`/courses/${courseId}/progress`, {
+    method: 'POST',
+    body: JSON.stringify({ lessonId }),
+  });
+}
+
+export async function unmarkLessonComplete(courseId: string, lessonId: string): Promise<void> {
+  return apiFetch(`/courses/${courseId}/progress/${lessonId}`, { method: 'DELETE' });
 }
 
 // ── Formatting ─────────────────────────────────────────────────────────────

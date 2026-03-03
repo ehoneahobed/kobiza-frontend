@@ -24,6 +24,7 @@ import {
   formatLabel,
   typeLabel,
 } from '@/lib/coaching';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 type Tab = 'curriculum' | 'sessions' | 'messages';
 
@@ -328,7 +329,7 @@ function CurriculumTab({
                   Week {week.week}{week.title ? `: ${week.title}` : ''}
                 </p>
                 {week.description && (
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{week.description}</p>
+                  <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{week.description}</div>
                 )}
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -350,7 +351,7 @@ function CurriculumTab({
             {isOpen && (
               <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4">
                 {week.description && (
-                  <p className="text-sm text-gray-600">{week.description}</p>
+                  <MarkdownRenderer content={week.description} size="sm" />
                 )}
                 {week.resources && (
                   <div className="text-sm text-gray-600">

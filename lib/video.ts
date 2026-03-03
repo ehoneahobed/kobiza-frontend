@@ -14,7 +14,7 @@ export function getEmbedUrl(url: string): string | null {
           ? u.pathname.slice(1)
           : u.searchParams.get('v');
       if (!id) return null;
-      return `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1`;
+      return `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&color=white`;
     }
 
     // Vimeo: vimeo.com/ID

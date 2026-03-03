@@ -17,6 +17,7 @@ import { getMyProfile, getMyCommunities } from '@/lib/creator';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { CopyLinkButton } from '@/components/ui/CopyLinkButton';
+import MarkdownEditor from '@/components/ui/MarkdownEditor';
 
 const CURRENCIES = ['USD', 'NGN', 'GHS', 'KES', 'ZAR'];
 
@@ -171,16 +172,13 @@ export default function CoursesPage() {
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   required
                 />
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-[#1F2937]">Description (optional)</label>
-                  <textarea
-                    placeholder="What will students learn?"
-                    value={form.description}
-                    onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                    rows={3}
-                    className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none"
-                  />
-                </div>
+                <MarkdownEditor
+                  label="Description (optional)"
+                  value={form.description}
+                  onChange={(val) => setForm((f) => ({ ...f, description: val }))}
+                  placeholder="What will students learn?"
+                  rows={3}
+                />
                 <Input
                   label="Cover Image URL (optional)"
                   placeholder="https://..."

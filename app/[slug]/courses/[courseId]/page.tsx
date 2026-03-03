@@ -7,6 +7,7 @@ import { getPublicCourse, PublicCourse } from '@/lib/courses';
 import { createCheckoutSession, enrollFree } from '@/lib/payments';
 import { getToken } from '@/lib/auth';
 import { formatPrice } from '@/lib/creator';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 type Track = 'self_paced' | 'accountability';
 type Step = 'idle' | 'select-track' | 'select-gateway' | 'loading';
@@ -129,9 +130,9 @@ export default function CourseLandingPage() {
             {course.title}
           </h1>
           {course.description && (
-            <p className="text-white/70 text-base max-w-2xl mb-4 leading-relaxed">
-              {course.description}
-            </p>
+            <div className="max-w-2xl mb-4">
+              <MarkdownRenderer content={course.description} invert />
+            </div>
           )}
           <div className="flex flex-wrap gap-4 text-sm text-white/60">
             <span>🎓 {totalLessons}</span>

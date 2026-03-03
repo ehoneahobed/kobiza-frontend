@@ -11,6 +11,7 @@ import {
 } from '@/lib/downloadables';
 import { getToken } from '@/lib/auth';
 import { createCheckoutSession } from '@/lib/payments';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -158,7 +159,9 @@ export default function DownloadLandingPage() {
             <h1 className="text-2xl font-bold text-[#1F2937] mb-3">{dl.title}</h1>
 
             {dl.description && (
-              <p className="text-[#6B7280] leading-relaxed mb-6">{dl.description}</p>
+              <div className="mb-6">
+                <MarkdownRenderer content={dl.description} />
+              </div>
             )}
 
             {/* Price */}

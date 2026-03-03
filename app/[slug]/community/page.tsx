@@ -36,6 +36,7 @@ import { formatPrice } from '@/lib/creator';
 import { getToken } from '@/lib/auth'; // used for getUserIdFromToken
 import { useCommunitySocket, MentionNotification, PresenceUpdate } from '@/hooks/useCommunitySocket';
 import PostCard from '@/components/community/PostCard';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 import MentionInput from '@/components/community/MentionInput';
 import CommunitySidebar from '@/components/community/CommunitySidebar';
 import LeaderboardList from '@/components/community/LeaderboardList';
@@ -909,7 +910,7 @@ function AboutTab({
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="font-bold text-[#1F2937] text-lg mb-2">{community.name}</h2>
         {community.description && (
-          <p className="text-[#6B7280] leading-relaxed mb-4">{community.description}</p>
+          <div className="text-[#6B7280] mb-4"><MarkdownRenderer content={community.description} size="sm" /></div>
         )}
         <div className="flex gap-6 text-sm text-[#6B7280]">
           <span>👥 {memberCount} members</span>
@@ -949,7 +950,7 @@ function AboutTab({
                     )}
                   </div>
                   {tier.description && (
-                    <p className="text-sm text-[#6B7280] mb-3">{tier.description}</p>
+                    <div className="text-sm text-[#6B7280] mb-3"><MarkdownRenderer content={tier.description} size="sm" compact /></div>
                   )}
                   <div className="text-sm space-y-1 mb-4">
                     <p className="font-semibold text-[#1F2937]">{fmt(tier.priceMonthly)}{!isFree && '/mo'}</p>

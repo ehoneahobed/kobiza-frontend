@@ -204,11 +204,12 @@ function CommunityCard({ membership }: { membership: MyMembership }) {
 
 // ── Enrollment card ────────────────────────────────────────────────────────
 function EnrollmentCard({ enrollment }: { enrollment: MyEnrollment }) {
-  const { course, progress, firstLessonId, track } = enrollment;
+  const { course, progress, firstLessonId, nextIncompleteLessonId, track } = enrollment;
   const isComplete = progress.total > 0 && progress.completed >= progress.total;
-  const href = progress.completed > 0 || !firstLessonId
-    ? `/learn/${course.id}`
-    : `/learn/${course.id}/${firstLessonId}`;
+  const targetLessonId = nextIncompleteLessonId ?? firstLessonId;
+  const href = targetLessonId
+    ? `/learn/${course.id}/${targetLessonId}`
+    : `/learn/${course.id}`;
 
   const ctaLabel = isComplete ? 'Review' : progress.completed > 0 ? 'Continue →' : 'Start →';
   const ctaBg = isComplete ? '#6B7280' : '#0D9488';

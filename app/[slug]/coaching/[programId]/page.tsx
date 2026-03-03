@@ -18,6 +18,7 @@ import {
 } from '@/lib/coaching';
 import { createCheckoutSession } from '@/lib/payments';
 import { getToken } from '@/lib/auth';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 // ── Cohort Selector (GROUP_COHORT only) ──────────────────────────────────────
 
@@ -263,9 +264,7 @@ export default function CoachingProgramPage() {
         {/* Sales Page Content or Description */}
         {(program.salesPageContent || program.description) && (
           <div className="bg-white rounded-2xl shadow-sm p-8">
-            <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {program.salesPageContent || program.description}
-            </div>
+            <MarkdownRenderer content={program.salesPageContent || program.description!} size="sm" />
           </div>
         )}
 

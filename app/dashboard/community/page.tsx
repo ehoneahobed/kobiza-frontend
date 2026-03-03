@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/Input';
 import PostCard from '@/components/community/PostCard';
 import MentionInput from '@/components/community/MentionInput';
 import TierAccessConfig from '@/components/community/TierAccessConfig';
+import MarkdownEditor from '@/components/ui/MarkdownEditor';
 import { getToken } from '@/lib/auth';
 import { API_URL } from '@/lib/api';
 import { useCommunitySocket } from '@/hooks/useCommunitySocket';
@@ -549,16 +550,13 @@ export default function CommunityPage() {
               onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
               required
             />
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-[#1F2937]">Description</label>
-              <textarea
-                placeholder="What will members get from your community?"
-                value={createForm.description}
-                onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
-                rows={3}
-                className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none"
-              />
-            </div>
+            <MarkdownEditor
+              label="Description"
+              value={createForm.description}
+              onChange={(val) => setCreateForm((f) => ({ ...f, description: val }))}
+              placeholder="What will members get from your community?"
+              rows={3}
+            />
             {error && <p className="text-sm text-[#EF4444]">{error}</p>}
             <Button type="submit" loading={createLoading} className="w-full">
               Create Community
@@ -660,16 +658,13 @@ export default function CommunityPage() {
                 onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
                 required
               />
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-[#1F2937]">Description</label>
-                <textarea
-                  placeholder="What will members get from this community?"
-                  value={createForm.description}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, description: e.target.value }))}
-                  rows={3}
-                  className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none"
-                />
-              </div>
+              <MarkdownEditor
+                label="Description"
+                value={createForm.description}
+                onChange={(val) => setCreateForm((f) => ({ ...f, description: val }))}
+                placeholder="What will members get from this community?"
+                rows={3}
+              />
               {error && <p className="text-sm text-[#EF4444]">{error}</p>}
               <div className="flex gap-3">
                 <Button
@@ -1652,13 +1647,14 @@ export default function CommunityPage() {
             <p className="text-xs text-[#6B7280] mb-4">
               Shown to members when they first visit your community.
             </p>
-            <textarea
-              value={welcomeMsg}
-              onChange={(e) => setWelcomeMsg(e.target.value)}
-              rows={4}
-              placeholder="Welcome to the community! Here's what you need to know to get started…"
-              className="w-full rounded-lg border border-[#6B7280]/30 px-4 py-3 text-sm text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none mb-3"
-            />
+            <div className="mb-3">
+              <MarkdownEditor
+                value={welcomeMsg}
+                onChange={(val) => setWelcomeMsg(val)}
+                rows={4}
+                placeholder="Welcome to the community! Here's what you need to know to get started…"
+              />
+            </div>
             <Button
               onClick={handleSaveWelcome}
               loading={savingWelcome}

@@ -36,6 +36,7 @@ import {
   formatSessionTime,
 } from '@/lib/coaching';
 import { getMyProfile } from '@/lib/creator';
+import MarkdownEditor from '@/components/ui/MarkdownEditor';
 
 // ── 3-Step Wizard Data ──────────────────────────────────────────────────────
 
@@ -295,26 +296,22 @@ function ProgramModal({
             </div>
 
             {/* Always shown: Description (short summary) */}
-            <div>
-              <label className={lbl}>Description</label>
-              <textarea
-                className={inp}
-                rows={2}
-                value={details.description}
-                onChange={(e) => setDetails((d) => ({ ...d, description: e.target.value }))}
-                placeholder="Short summary shown in listings"
-              />
-            </div>
+            <MarkdownEditor
+              label="Description"
+              value={details.description}
+              onChange={(val) => setDetails((d) => ({ ...d, description: val }))}
+              placeholder="Short summary shown in listings"
+              rows={2}
+            />
 
             {/* Always shown: Sales Page Content */}
             <div>
-              <label className={lbl}>Sales Page Content</label>
-              <textarea
-                className={inp}
-                rows={4}
+              <MarkdownEditor
+                label="Sales Page Content"
                 value={details.salesPageContent}
-                onChange={(e) => setDetails((d) => ({ ...d, salesPageContent: e.target.value }))}
+                onChange={(val) => setDetails((d) => ({ ...d, salesPageContent: val }))}
                 placeholder="Detailed description shown on the public sales page. Supports markdown."
+                rows={4}
               />
               <p className="text-xs text-gray-400 mt-1">This is what potential clients see before enrolling.</p>
             </div>
@@ -737,12 +734,11 @@ function CurriculumPanel({ program, onUpdate }: { program: CoachingProgram; onUp
           </div>
 
           <div className="p-4 space-y-3">
-            <textarea
-              className={inp}
-              rows={2}
-              placeholder="What will the client learn / work on this week?"
+            <MarkdownEditor
               value={week.description ?? ''}
-              onChange={(e) => update(i, 'description', e.target.value)}
+              onChange={(val) => update(i, 'description', val)}
+              placeholder="What will the client learn / work on this week?"
+              rows={2}
             />
             <input
               className={inp}

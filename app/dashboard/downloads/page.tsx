@@ -11,6 +11,7 @@ import {
 } from '@/lib/downloadables';
 import { getMyProfile } from '@/lib/creator';
 import { CopyLinkButton } from '@/components/ui/CopyLinkButton';
+import MarkdownEditor from '@/components/ui/MarkdownEditor';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -109,16 +110,13 @@ function DownloadableModal({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-[#1F2937] mb-1.5">Description</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => set('description', e.target.value)}
-              rows={3}
-              placeholder="What will they get from this download?"
-              className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488] resize-none"
-            />
-          </div>
+          <MarkdownEditor
+            label="Description"
+            value={form.description}
+            onChange={(val) => set('description', val)}
+            placeholder="What will they get from this download?"
+            rows={3}
+          />
 
           {!initial && (
             <div>

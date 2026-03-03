@@ -3,6 +3,7 @@ import { getStorefront } from '@/lib/creator';
 import { listDownloadablesBySlug } from '@/lib/downloadables';
 import { listProgramsBySlug } from '@/lib/coaching';
 import StorefrontContent from './StorefrontContent';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,7 +57,7 @@ export default async function StorefrontPage({ params }: Props) {
           </div>
 
           {profile.bio && (
-            <p className="text-[#1F2937] leading-relaxed">{profile.bio}</p>
+            <MarkdownRenderer content={profile.bio} />
           )}
         </div>
 

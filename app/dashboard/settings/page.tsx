@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getMyProfile, updateMyProfile, CreatorProfile } from '@/lib/creator';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import MarkdownEditor from '@/components/ui/MarkdownEditor';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -98,18 +99,14 @@ export default function SettingsPage() {
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               placeholder="Your name"
             />
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-[#1F2937]">Bio</label>
-              <textarea
-                value={form.bio}
-                onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                placeholder="Tell your audience who you are and what you teach…"
-                rows={3}
-                maxLength={500}
-                className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] focus:border-transparent resize-none"
-              />
-              <p className="text-xs text-[#6B7280] text-right">{form.bio.length}/500</p>
-            </div>
+            <MarkdownEditor
+              label="Bio"
+              value={form.bio}
+              onChange={(val) => setForm((f) => ({ ...f, bio: val }))}
+              placeholder="Tell your audience who you are and what you teach…"
+              rows={3}
+              maxLength={500}
+            />
           </div>
         </div>
 

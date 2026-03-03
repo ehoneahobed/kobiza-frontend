@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { QuickLink, LeaderboardEntry } from '@/lib/community';
 import LeaderboardList from './LeaderboardList';
+import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 interface Props {
   slug: string;
@@ -31,7 +32,7 @@ export default function CommunitySidebar({
       {/* Community info card */}
       <div className="bg-white rounded-xl shadow-sm p-5">
         <h2 className="font-bold text-[#1F2937] text-base mb-1">{communityName}</h2>
-        {description && <p className="text-sm text-[#6B7280] mb-4">{description}</p>}
+        {description && <div className="text-sm text-[#6B7280] mb-4"><MarkdownRenderer content={description} size="sm" compact /></div>}
 
         <div className="flex gap-4 text-center mb-4">
           <button

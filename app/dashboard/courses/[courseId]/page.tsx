@@ -17,6 +17,7 @@ import {
 } from '@/lib/courses';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import MarkdownEditor from '@/components/ui/MarkdownEditor';
 
 // ── Lesson Editor (inline) ─────────────────────────────────────────────────
 function LessonEditor({
@@ -92,16 +93,13 @@ function LessonEditor({
             value={form.videoUrl}
             onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-[#1F2937]">Lesson Notes (Markdown)</label>
-            <textarea
-              value={form.content}
-              onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-              placeholder="Add written content, resources, or instructions…"
-              rows={4}
-              className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none text-sm font-mono"
-            />
-          </div>
+          <MarkdownEditor
+            label="Lesson Notes (Markdown)"
+            value={form.content}
+            onChange={(val) => setForm((f) => ({ ...f, content: val }))}
+            placeholder="Add written content, resources, or instructions…"
+            rows={4}
+          />
           {/* Accountability toggle */}
           <label className="flex items-center gap-3 cursor-pointer">
             <div
@@ -364,15 +362,12 @@ export default function CourseEditorPage() {
             onChange={(e) => setSettingsForm((f) => ({ ...f, title: e.target.value }))}
             required
           />
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium text-[#1F2937]">Description</label>
-            <textarea
-              value={settingsForm.description}
-              onChange={(e) => setSettingsForm((f) => ({ ...f, description: e.target.value }))}
-              rows={2}
-              className="w-full rounded-lg border border-[#6B7280] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none"
-            />
-          </div>
+          <MarkdownEditor
+            label="Description"
+            value={settingsForm.description}
+            onChange={(val) => setSettingsForm((f) => ({ ...f, description: val }))}
+            rows={2}
+          />
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-[#F3F4F6] p-4">
