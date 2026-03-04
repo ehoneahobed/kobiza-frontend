@@ -248,6 +248,108 @@ export async function unmarkLessonComplete(courseId: string, lessonId: string): 
   return apiFetch(`/courses/${courseId}/progress/${lessonId}`, { method: 'DELETE' });
 }
 
+// ── Quizzes ──────────────────────────────────────────────────────────────
+
+export interface QuizQuestion {
+  id: string;
+  text: string;
+  type: 'MULTIPLE_CHOICE' | 'TRUE_FALSE';
+  options: string[];
+  correctIndex?: number; // only present in creator view
+}
+
+export interface Quiz {
+  id: string;
+  title: string;
+  questions: QuizQuestion[];
+  passingScore: number;
+  timeLimitSec: number | null;
+  previousAttempt?: { score: number; passed: boolean; completedAt: string } | null;
+}
+
+export interface QuizResult {
+  score: number;
+  passed: boolean;
+  correctCount: number;
+  totalQuestions: number;
+  passingScore: number;
+  attemptId: string;
+}
+
+export async function getQuiz(courseId: string, lessonId: string): Promise<Quiz> {
+  return apiFetch(`/courses/${courseId}/lessons/${lessonId}/quiz`);
+}
+
+export async function getQuizCreatorView(courseId: string, lessonId: string): Promise<Quiz & { questions: (QuizQuestion & { correctIndex: number })[] }> {
+  return apiFetch(`/courses/${courseId}/lessons/${lessonId}/quiz/edit`);
+}
+
+export async function createQuiz(
+  courseId: string,
+  lessonId: string,
+  data: { title: string; questions: QuizQuestion[]; passingScore?: number; timeLimitSec?: number },
+): Promise<Quiz> {
+  return apiFetch(`/courses/${courseId}/lessons/${lessonId}/quiz`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateQuiz(
+  courseId: string,
+  lessonId: string,
+  data: Partial<{ title: string; questions: QuizQuestion[]; passingScore: number; timeLimitSec: number | null }>,
+): Promise<Quiz> {
+  return apiFetch(`/courses/${courseId}/lessons/${lessonId}/quiz`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteQuiz(courseId: string, lessonId: string): Promise<void> {
+  return apiFetch(`/courses/${courseId}/lessons/${lessonId}/quiz`, { method: 'DELETE' });
+}
+
+export async function submitQuiz(
+  courseId: string,
+  lessonId: string,
+  answers: { questionId: string; selectedIndex: number }[],
+): Promise<QuizResult> {
+  return apiFetch(`/courses/${courseId}/lessons/${lessonId}/quiz/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ answers }),
+  });
+}
+
+// ── Certificates ─────────────────────────────────────────────────────────
+
+export interface CourseCertificate {
+  id: string;
+  enrollmentId: string;
+  certificateNumber: string;
+  studentName: string;
+  courseTitle: string;
+  creatorName: string;
+  issuedAt: string;
+}
+
+export interface CertificateVerification {
+  certificateNumber: string;
+  studentName: string;
+  courseTitle: string;
+  creatorName: string;
+  issuedAt: string;
+  valid: boolean;
+}
+
+export async function getCertificate(courseId: string): Promise<CourseCertificate> {
+  return apiFetch(`/courses/${courseId}/certificate`);
+}
+
+export async function verifyCertificate(certificateNumber: string): Promise<CertificateVerification> {
+  return apiFetch(`/courses/certificates/verify/${certificateNumber}`);
+}
+
 // ── Formatting ─────────────────────────────────────────────────────────────
 export function formatPrice(cents: number, currency: string): string {
   if (cents === 0) return 'Free';

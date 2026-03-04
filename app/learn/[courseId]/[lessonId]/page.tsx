@@ -19,6 +19,7 @@ import VideoPlayer from '@/components/course-player/VideoPlayer';
 import MarkCompleteButton from '@/components/course-player/MarkCompleteButton';
 import LessonNavigation from '@/components/course-player/LessonNavigation';
 import CourseCompletionModal from '@/components/course-player/CourseCompletionModal';
+import QuizWidget from '@/components/course-player/QuizWidget';
 
 export default function LessonPlayerPage() {
   const { courseId, lessonId } = useParams();
@@ -361,6 +362,11 @@ export default function LessonPlayerPage() {
                 </form>
               )}
             </div>
+          )}
+
+          {/* Quiz */}
+          {enrollment && (
+            <QuizWidget courseId={courseId as string} lessonId={lessonId as string} />
           )}
 
           {/* Mark as Complete button */}

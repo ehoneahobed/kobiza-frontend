@@ -18,9 +18,22 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Password strength
+  const pwChecks = {
+    length: form.password.length >= 8,
+    upper: /[A-Z]/.test(form.password),
+    lower: /[a-z]/.test(form.password),
+    number: /\d/.test(form.password),
+  };
+  const pwScore = Object.values(pwChecks).filter(Boolean).length;
+  const pwStrong = pwScore === 4;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    if (!pwStrong) {
+      setError('Please meet all password requirements before continuing.');
+      return;
+    }
     setLoading(true);
     try {
       const result = await register(form);
@@ -114,15 +127,52 @@ export default function SignUpPage() {
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               required
             />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Min. 8 characters"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              minLength={8}
-              required
-            />
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                placeholder="Min. 8 characters"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                minLength={8}
+                required
+              />
+              {form.password && (
+                <div className="mt-2 space-y-2">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${
+                          i <= pwScore
+                            ? pwScore <= 2
+                              ? 'bg-red-400'
+                              : pwScore === 3
+                                ? 'bg-amber-400'
+                                : 'bg-[#0D9488]'
+                            : 'bg-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
+                    {([
+                      ['length', '8+ characters'],
+                      ['upper', 'Uppercase letter'],
+                      ['lower', 'Lowercase letter'],
+                      ['number', 'Number'],
+                    ] as const).map(([key, label]) => (
+                      <span
+                        key={key}
+                        className={pwChecks[key] ? 'text-[#0D9488]' : 'text-[#6B7280]'}
+                      >
+                        {pwChecks[key] ? '\u2713' : '\u2022'} {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {error && (
               <p className="text-sm text-[#EF4444] bg-red-50 border border-red-200 rounded-lg px-4 py-3">

@@ -17,6 +17,16 @@ function ResetPasswordForm() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
 
+  // Password strength
+  const pwChecks = {
+    length: form.password.length >= 8,
+    upper: /[A-Z]/.test(form.password),
+    lower: /[a-z]/.test(form.password),
+    number: /\d/.test(form.password),
+  };
+  const pwScore = Object.values(pwChecks).filter(Boolean).length;
+  const pwStrong = pwScore === 4;
+
   useEffect(() => {
     if (!token) setError('No reset token found. Please request a new password reset link.');
   }, [token]);
@@ -25,8 +35,8 @@ function ResetPasswordForm() {
     e.preventDefault();
     setError('');
 
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    if (!pwStrong) {
+      setError('Please meet all password requirements before continuing.');
       return;
     }
     if (form.password !== form.confirm) {
@@ -77,15 +87,52 @@ function ResetPasswordForm() {
               </p>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <Input
-                  label="New Password"
-                  type="password"
-                  placeholder="At least 8 characters"
-                  value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                  required
-                  disabled={!token}
-                />
+                <div>
+                  <Input
+                    label="New Password"
+                    type="password"
+                    placeholder="At least 8 characters"
+                    value={form.password}
+                    onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                    required
+                    disabled={!token}
+                  />
+                  {form.password && (
+                    <div className="mt-2 space-y-2">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div
+                            key={i}
+                            className={`h-1 flex-1 rounded-full transition-colors ${
+                              i <= pwScore
+                                ? pwScore <= 2
+                                  ? 'bg-red-400'
+                                  : pwScore === 3
+                                    ? 'bg-amber-400'
+                                    : 'bg-[#0D9488]'
+                                : 'bg-gray-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
+                        {([
+                          ['length', '8+ characters'],
+                          ['upper', 'Uppercase letter'],
+                          ['lower', 'Lowercase letter'],
+                          ['number', 'Number'],
+                        ] as const).map(([key, label]) => (
+                          <span
+                            key={key}
+                            className={pwChecks[key] ? 'text-[#0D9488]' : 'text-[#6B7280]'}
+                          >
+                            {pwChecks[key] ? '\u2713' : '\u2022'} {label}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <Input
                   label="Confirm Password"
                   type="password"

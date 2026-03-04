@@ -94,6 +94,12 @@ export default function CourseCompletionModal({ courseTitle, courseId, onClose }
 
           <div className="flex flex-col gap-3">
             <a
+              href={`/learn/${courseId}/certificate`}
+              className="bg-[#F59E0B] text-[#1F2937] font-semibold py-3 px-6 rounded-xl hover:bg-amber-500 transition-colors text-sm"
+            >
+              View Certificate
+            </a>
+            <a
               href="/home"
               className="bg-[#0D9488] text-white font-semibold py-3 px-6 rounded-xl hover:bg-teal-700 transition-colors text-sm"
             >
