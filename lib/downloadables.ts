@@ -2,6 +2,13 @@ import { apiFetch } from './api';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
+export interface CustomFieldConfig {
+  label: string;
+  type: 'text' | 'select';
+  required: boolean;
+  options?: string[];
+}
+
 export interface Downloadable {
   id: string;
   title: string;
@@ -10,6 +17,11 @@ export interface Downloadable {
   price: number; // cents (0 = free)
   currency: string;
   isPublished: boolean;
+  formatInfo: string | null;
+  tags: string[];
+  collectPhone: boolean;
+  collectMarketingConsent: boolean;
+  customFields: CustomFieldConfig[] | null;
   createdAt: string;
   _count?: { accesses: number };
 }
@@ -34,6 +46,7 @@ export interface MyDownload {
     coverUrl: string | null;
     price: number;
     currency: string;
+    formatInfo: string | null;
     creatorName: string;
     creatorSlug: string;
   };
@@ -63,6 +76,11 @@ export async function createDownloadable(data: {
   price?: number;
   currency?: string;
   isPublished?: boolean;
+  formatInfo?: string;
+  tags?: string[];
+  collectPhone?: boolean;
+  collectMarketingConsent?: boolean;
+  customFields?: CustomFieldConfig[];
 }): Promise<Downloadable> {
   return apiFetch('/downloadables', { method: 'POST', body: JSON.stringify(data) });
 }
@@ -77,6 +95,11 @@ export async function updateDownloadable(
     price: number;
     currency: string;
     isPublished: boolean;
+    formatInfo: string;
+    tags: string[];
+    collectPhone: boolean;
+    collectMarketingConsent: boolean;
+    customFields: CustomFieldConfig[];
   }>,
 ): Promise<Downloadable> {
   return apiFetch(`/downloadables/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
@@ -89,8 +112,14 @@ export async function deleteDownloadable(id: string): Promise<void> {
 // ── Member ─────────────────────────────────────────────────────────────────
 
 /** Claim a free download — returns { fileUrl } */
-export async function claimFreeDownload(downloadableId: string): Promise<{ fileUrl: string }> {
-  return apiFetch(`/downloadables/${downloadableId}/claim`, { method: 'POST' });
+export async function claimFreeDownload(
+  downloadableId: string,
+  leadData?: { phone?: string; marketingOptIn?: boolean; customFieldData?: Record<string, string> },
+): Promise<{ fileUrl: string }> {
+  return apiFetch(`/downloadables/${downloadableId}/claim`, {
+    method: 'POST',
+    body: JSON.stringify(leadData ?? {}),
+  });
 }
 
 export async function getMyDownloads(): Promise<MyDownload[]> {
@@ -105,6 +134,9 @@ export interface DownloadableAccessUser {
   email: string;
   avatarUrl: string | null;
   grantedAt: string;
+  phone: string | null;
+  marketingOptIn: boolean | null;
+  customFieldData: Record<string, string> | null;
 }
 
 export interface DownloadableAccessesResponse {

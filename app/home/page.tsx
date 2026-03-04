@@ -12,6 +12,7 @@ import { getMyEnrollments as getMyCoachingEnrollments, CoachingEnrollment, forma
 // ── Nav items ──────────────────────────────────────────────────────────────
 const NAV = [
   { label: 'My Learning', href: '/home', icon: '⊞' },
+  { label: 'Downloads', href: '/home/downloads', icon: '📥' },
   { label: 'Messages', href: '/home/messages', icon: '✉' },
   { label: 'Explore', href: '/explore', icon: '🔍' },
   { label: 'Settings', href: '/home/settings', icon: '⚙' },
@@ -420,6 +421,7 @@ export default function MemberHomePage() {
                 title="My Downloads"
                 icon="📥"
                 count={myDownloads.length}
+                action={{ label: 'View all', href: '/home/downloads' }}
               />
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {myDownloads.map((d) => (

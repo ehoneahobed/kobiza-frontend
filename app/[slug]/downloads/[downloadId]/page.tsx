@@ -8,6 +8,7 @@ import {
   claimFreeDownload,
   DownloadablePublic,
   formatDownloadPrice,
+  CustomFieldConfig,
 } from '@/lib/downloadables';
 import { getToken } from '@/lib/auth';
 import { createCheckoutSession } from '@/lib/payments';
@@ -32,6 +33,9 @@ export default function DownloadLandingPage() {
   const [error, setError] = useState('');
   const [claimed, setClaimed] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [phone, setPhone] = useState('');
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [customFieldData, setCustomFieldData] = useState<Record<string, string>>({});
 
   useEffect(() => {
     getDownloadablePublic(downloadId)
@@ -46,15 +50,40 @@ export default function DownloadLandingPage() {
       .finally(() => setLoading(false));
   }, [downloadId]);
 
+  const hasLeadCapture = dl?.collectPhone || dl?.collectMarketingConsent || ((dl?.customFields as CustomFieldConfig[] | null)?.length ?? 0) > 0;
+
+  const validateLeadForm = (): boolean => {
+    if (!dl) return true;
+    const fields = (dl.customFields as CustomFieldConfig[] | null) ?? [];
+    for (const f of fields) {
+      if (f.required && !customFieldData[f.label]?.trim()) {
+        setError(`"${f.label}" is required.`);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const buildLeadData = () => {
+    const data: { phone?: string; marketingOptIn?: boolean; customFieldData?: Record<string, string> } = {};
+    if (dl?.collectPhone && phone) data.phone = phone;
+    if (dl?.collectMarketingConsent) data.marketingOptIn = marketingOptIn;
+    const fields = (dl?.customFields as CustomFieldConfig[] | null) ?? [];
+    if (fields.length > 0 && Object.keys(customFieldData).length > 0) data.customFieldData = customFieldData;
+    return data;
+  };
+
   const handleClaim = async () => {
     if (!getToken()) {
       router.push(`/login?next=/${slug}/downloads/${downloadId}`);
       return;
     }
+    if (!validateLeadForm()) return;
     setActionLoading(true);
     setError('');
     try {
-      const { fileUrl: url } = await claimFreeDownload(downloadId);
+      const leadData = buildLeadData();
+      const { fileUrl: url } = await claimFreeDownload(downloadId, leadData);
       setFileUrl(url);
       setClaimed(true);
     } catch (err: any) {
@@ -69,9 +98,15 @@ export default function DownloadLandingPage() {
       router.push(`/login?next=/${slug}/downloads/${downloadId}`);
       return;
     }
+    if (!validateLeadForm()) return;
     setActionLoading(true);
     setError('');
     try {
+      // Store lead data for extraction in webhook
+      const leadData = buildLeadData();
+      if (Object.keys(leadData).length > 0) {
+        localStorage.setItem(`kobiza_lead_${downloadId}`, JSON.stringify(leadData));
+      }
       const result = await createCheckoutSession({
         productId: downloadId,
         productType: 'download',
@@ -158,6 +193,21 @@ export default function DownloadLandingPage() {
 
             <h1 className="text-2xl font-bold text-[#1F2937] mb-3">{dl.title}</h1>
 
+            {(dl.formatInfo || (dl.tags && dl.tags.length > 0)) && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {dl.formatInfo && (
+                  <span className="text-xs bg-[#0D9488]/10 text-[#0D9488] font-medium px-2.5 py-1 rounded-full">
+                    {dl.formatInfo}
+                  </span>
+                )}
+                {dl.tags?.map((tag) => (
+                  <span key={tag} className="text-xs bg-[#F3F4F6] text-[#6B7280] px-2.5 py-1 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {dl.description && (
               <div className="mb-6">
                 <MarkdownRenderer content={dl.description} />
@@ -177,6 +227,64 @@ export default function DownloadLandingPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl mb-4">
                 {error}
+              </div>
+            )}
+
+            {/* Lead capture form */}
+            {hasLeadCapture && !claimed && (
+              <div className="space-y-3 mb-4">
+                {dl.collectPhone && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#1F2937] mb-1">Phone number</label>
+                    <input
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      type="tel"
+                      placeholder="e.g. +1 555 123 4567"
+                      className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]"
+                    />
+                  </div>
+                )}
+
+                {((dl.customFields as CustomFieldConfig[] | null) ?? []).map((f) => (
+                  <div key={f.label}>
+                    <label className="block text-sm font-medium text-[#1F2937] mb-1">
+                      {f.label}{f.required && ' *'}
+                    </label>
+                    {f.type === 'select' ? (
+                      <select
+                        value={customFieldData[f.label] ?? ''}
+                        onChange={(e) => setCustomFieldData((prev) => ({ ...prev, [f.label]: e.target.value }))}
+                        className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488] bg-white"
+                      >
+                        <option value="">Select...</option>
+                        {(f.options ?? []).map((opt) => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        value={customFieldData[f.label] ?? ''}
+                        onChange={(e) => setCustomFieldData((prev) => ({ ...prev, [f.label]: e.target.value }))}
+                        className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]"
+                      />
+                    )}
+                  </div>
+                ))}
+
+                {dl.collectMarketingConsent && (
+                  <label className="flex items-start gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={marketingOptIn}
+                      onChange={(e) => setMarketingOptIn(e.target.checked)}
+                      className="accent-[#0D9488] mt-0.5"
+                    />
+                    <span className="text-sm text-[#6B7280]">
+                      I agree to receive marketing emails from {creatorProfile.user.name}
+                    </span>
+                  </label>
+                )}
               </div>
             )}
 

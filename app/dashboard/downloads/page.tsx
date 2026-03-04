@@ -8,6 +8,7 @@ import {
   deleteDownloadable,
   Downloadable,
   formatDownloadPrice,
+  CustomFieldConfig,
 } from '@/lib/downloadables';
 import { getMyProfile } from '@/lib/creator';
 import { CopyLinkButton } from '@/components/ui/CopyLinkButton';
@@ -24,6 +25,11 @@ type FormState = {
   price: string; // dollars string
   currency: string;
   isPublished: boolean;
+  formatInfo: string;
+  tags: string; // comma-separated
+  collectPhone: boolean;
+  collectMarketingConsent: boolean;
+  customFields: CustomFieldConfig[];
 };
 
 const EMPTY_FORM: FormState = {
@@ -34,6 +40,11 @@ const EMPTY_FORM: FormState = {
   price: '0',
   currency: 'USD',
   isPublished: false,
+  formatInfo: '',
+  tags: '',
+  collectPhone: false,
+  collectMarketingConsent: false,
+  customFields: [],
 };
 
 // ── Form modal ──────────────────────────────────────────────────────────────
@@ -57,6 +68,11 @@ function DownloadableModal({
           price: String(initial.price / 100),
           currency: initial.currency,
           isPublished: initial.isPublished,
+          formatInfo: initial.formatInfo ?? '',
+          tags: (initial.tags ?? []).join(', '),
+          collectPhone: initial.collectPhone ?? false,
+          collectMarketingConsent: initial.collectMarketingConsent ?? false,
+          customFields: (initial.customFields as CustomFieldConfig[]) ?? [],
         }
       : EMPTY_FORM,
   );
@@ -65,6 +81,21 @@ function DownloadableModal({
 
   const set = (k: keyof FormState, v: string | boolean) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const addCustomField = () =>
+    setForm((f) => ({
+      ...f,
+      customFields: [...f.customFields, { label: '', type: 'text' as const, required: false }],
+    }));
+
+  const updateCustomField = (idx: number, patch: Partial<CustomFieldConfig>) =>
+    setForm((f) => ({
+      ...f,
+      customFields: f.customFields.map((cf, i) => (i === idx ? { ...cf, ...patch } : cf)),
+    }));
+
+  const removeCustomField = (idx: number) =>
+    setForm((f) => ({ ...f, customFields: f.customFields.filter((_, i) => i !== idx) }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,9 +116,11 @@ function DownloadableModal({
     }
   };
 
+  const inputCls = "w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]";
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-[#F3F4F6]">
           <h2 className="text-lg font-bold text-[#1F2937]">
             {initial ? 'Edit Download' : 'New Download'}
@@ -101,13 +134,16 @@ function DownloadableModal({
             </div>
           )}
 
+          {/* ── Product Details ── */}
+          <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider">Product Details</p>
+
           <div>
             <label className="block text-sm font-medium text-[#1F2937] mb-1.5">Title *</label>
             <input
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
               placeholder="e.g. Ultimate Marketing Playbook"
-              className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]"
+              className={inputCls}
             />
           </div>
 
@@ -127,7 +163,7 @@ function DownloadableModal({
                 onChange={(e) => set('fileUrl', e.target.value)}
                 placeholder="https://..."
                 type="url"
-                className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]"
+                className={inputCls}
               />
               <p className="text-xs text-[#6B7280] mt-1">
                 Direct link to the file (PDF, ZIP, MP4, etc.)
@@ -146,7 +182,7 @@ function DownloadableModal({
                 onChange={(e) => set('fileUrl', e.target.value)}
                 placeholder="https://..."
                 type="url"
-                className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]"
+                className={inputCls}
               />
             </div>
           )}
@@ -158,8 +194,29 @@ function DownloadableModal({
               onChange={(e) => set('coverUrl', e.target.value)}
               placeholder="https://... (optional)"
               type="url"
-              className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]"
+              className={inputCls}
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-[#1F2937] mb-1.5">Format Info</label>
+              <input
+                value={form.formatInfo}
+                onChange={(e) => set('formatInfo', e.target.value)}
+                placeholder="e.g. PDF eBook, 45 pages"
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#1F2937] mb-1.5">Tags</label>
+              <input
+                value={form.tags}
+                onChange={(e) => set('tags', e.target.value)}
+                placeholder="e.g. marketing, ebook, startup"
+                className={inputCls}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -171,7 +228,7 @@ function DownloadableModal({
                 type="number"
                 min="0"
                 step="0.01"
-                className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488]"
+                className={inputCls}
               />
             </div>
             <div>
@@ -179,7 +236,7 @@ function DownloadableModal({
               <select
                 value={form.currency}
                 onChange={(e) => set('currency', e.target.value)}
-                className="w-full border border-[#E5E7EB] rounded-xl px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30 focus:border-[#0D9488] bg-white"
+                className={`${inputCls} bg-white`}
               >
                 <option value="USD">USD</option>
                 <option value="NGN">NGN</option>
@@ -203,6 +260,92 @@ function DownloadableModal({
               {form.isPublished ? 'Published' : 'Draft'}
             </span>
           </label>
+
+          {/* ── Lead Capture ── */}
+          <div className="border-t border-[#F3F4F6] pt-4 mt-2">
+            <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-0.5">Lead Capture</p>
+            <p className="text-xs text-[#9CA3AF] mb-4">Collect additional info when users download</p>
+
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => set('collectMarketingConsent', !form.collectMarketingConsent)}
+                  className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${form.collectMarketingConsent ? 'bg-[#0D9488]' : 'bg-[#D1D5DB]'}`}
+                >
+                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.collectMarketingConsent ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <span className="text-sm text-[#1F2937]">Email marketing opt-in</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <div
+                  onClick={() => set('collectPhone', !form.collectPhone)}
+                  className={`relative w-10 h-6 rounded-full transition-colors flex-shrink-0 ${form.collectPhone ? 'bg-[#0D9488]' : 'bg-[#D1D5DB]'}`}
+                >
+                  <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${form.collectPhone ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <span className="text-sm text-[#1F2937]">Phone number</span>
+              </label>
+            </div>
+
+            {/* Custom fields builder */}
+            <div className="mt-4">
+              <p className="text-sm font-medium text-[#1F2937] mb-2">Custom Fields</p>
+              {form.customFields.map((cf, idx) => (
+                <div key={idx} className="flex items-start gap-2 mb-2">
+                  <input
+                    value={cf.label}
+                    onChange={(e) => updateCustomField(idx, { label: e.target.value })}
+                    placeholder="Field label"
+                    className="flex-1 border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30"
+                  />
+                  <select
+                    value={cf.type}
+                    onChange={(e) => updateCustomField(idx, { type: e.target.value as 'text' | 'select' })}
+                    className="border border-[#E5E7EB] rounded-lg px-2 py-2 text-sm bg-white text-[#1F2937]"
+                  >
+                    <option value="text">Text</option>
+                    <option value="select">Select</option>
+                  </select>
+                  <label className="flex items-center gap-1 text-xs text-[#6B7280] whitespace-nowrap pt-2.5">
+                    <input
+                      type="checkbox"
+                      checked={cf.required}
+                      onChange={(e) => updateCustomField(idx, { required: e.target.checked })}
+                      className="accent-[#0D9488]"
+                    />
+                    Req
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => removeCustomField(idx)}
+                    className="text-red-400 hover:text-red-600 pt-2 text-sm"
+                  >
+                    x
+                  </button>
+                  {cf.type === 'select' && (
+                    <input
+                      value={(cf.options ?? []).join(', ')}
+                      onChange={(e) =>
+                        updateCustomField(idx, {
+                          options: e.target.value.split(',').map((s) => s.trim()).filter(Boolean),
+                        })
+                      }
+                      placeholder="Options (comma-sep)"
+                      className="flex-1 border border-[#E5E7EB] rounded-lg px-3 py-2 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488]/30"
+                    />
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addCustomField}
+                className="text-sm text-[#0D9488] hover:underline font-medium"
+              >
+                + Add field
+              </button>
+            </div>
+          </div>
 
           <div className="flex gap-3 pt-2">
             <button
@@ -271,6 +414,11 @@ function DownloadCard({
           <span className="text-xs bg-[#F59E0B]/10 text-[#F59E0B] font-semibold px-2 py-0.5 rounded-full">
             {formatDownloadPrice(dl.price, dl.currency)}
           </span>
+          {dl.formatInfo && (
+            <span className="text-xs bg-[#0D9488]/10 text-[#0D9488] font-medium px-2 py-0.5 rounded-full">
+              {dl.formatInfo}
+            </span>
+          )}
         </div>
 
         <h3 className="font-bold text-[#1F2937] text-sm line-clamp-2 mb-1">{dl.title}</h3>
@@ -335,6 +483,11 @@ export default function DownloadsDashboardPage() {
   }, []);
 
   const handleSave = async (data: Omit<FormState, 'price'> & { price: number }) => {
+    const tags = data.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
     const payload = {
       title: data.title,
       description: data.description || undefined,
@@ -343,6 +496,11 @@ export default function DownloadsDashboardPage() {
       price: data.price,
       currency: data.currency,
       isPublished: data.isPublished,
+      formatInfo: data.formatInfo || undefined,
+      tags,
+      collectPhone: data.collectPhone,
+      collectMarketingConsent: data.collectMarketingConsent,
+      customFields: data.customFields.length > 0 ? data.customFields : undefined,
     };
 
     if (editing) {

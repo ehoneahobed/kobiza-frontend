@@ -188,6 +188,8 @@ export default function DownloadableDetailPage() {
               <tr className="text-left text-xs text-[#6B7280] border-b border-[#F3F4F6]">
                 <th className="px-5 py-3 font-medium">User</th>
                 <th className="px-5 py-3 font-medium">Email</th>
+                <th className="px-5 py-3 font-medium">Phone</th>
+                <th className="px-5 py-3 font-medium">Opt-In</th>
                 <th className="px-5 py-3 font-medium">Download Date</th>
               </tr>
             </thead>
@@ -211,6 +213,16 @@ export default function DownloadableDetailPage() {
                     </div>
                   </td>
                   <td className="px-5 py-3 text-[#6B7280]">{a.email}</td>
+                  <td className="px-5 py-3 text-[#6B7280]">{a.phone ?? '—'}</td>
+                  <td className="px-5 py-3">
+                    {a.marketingOptIn === true ? (
+                      <span className="text-xs bg-teal-50 text-[#0D9488] font-semibold px-2 py-0.5 rounded-full">Yes</span>
+                    ) : a.marketingOptIn === false ? (
+                      <span className="text-xs bg-[#F3F4F6] text-[#6B7280] font-medium px-2 py-0.5 rounded-full">No</span>
+                    ) : (
+                      <span className="text-[#6B7280]">—</span>
+                    )}
+                  </td>
                   <td className="px-5 py-3 text-[#6B7280]">
                     {new Date(a.grantedAt).toLocaleDateString('en-US', {
                       year: 'numeric',
