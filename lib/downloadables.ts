@@ -97,6 +97,72 @@ export async function getMyDownloads(): Promise<MyDownload[]> {
   return apiFetch('/downloadables/my-downloads');
 }
 
+// ── Analytics ─────────────────────────────────────────────────────────────
+
+export interface DownloadableAccessUser {
+  id: string;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+  grantedAt: string;
+}
+
+export interface DownloadableAccessesResponse {
+  accesses: DownloadableAccessUser[];
+  total: number;
+  page: number;
+  hasMore: boolean;
+}
+
+export interface DownloadableAnalytics {
+  id: string;
+  title: string;
+  description: string | null;
+  coverUrl: string | null;
+  price: number;
+  currency: string;
+  isPublished: boolean;
+  totalAccesses: number;
+  last30Days: number;
+  daily: { date: string; count: number }[];
+}
+
+export async function getDownloadableAnalytics(downloadableId: string): Promise<DownloadableAnalytics> {
+  return apiFetch(`/downloadables/${downloadableId}/analytics`);
+}
+
+export async function getDownloadableAccesses(
+  downloadableId: string,
+  page = 1,
+  limit = 20,
+  search?: string,
+): Promise<DownloadableAccessesResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) params.set('search', search);
+  return apiFetch(`/downloadables/${downloadableId}/accesses?${params}`);
+}
+
+export async function downloadAccessesCsv(downloadableId: string): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('Kobiza_token') : null;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+  const res = await fetch(`${API_URL}/api/downloadables/${downloadableId}/accesses/export`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error('Export failed');
+  const blob = await res.blob();
+  const disposition = res.headers.get('Content-Disposition') ?? '';
+  const match = disposition.match(/filename="(.+)"/);
+  const filename = match ? match[1] : 'accesses.csv';
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 export function formatDownloadPrice(cents: number, currency: string): string {

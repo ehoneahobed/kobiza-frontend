@@ -12,6 +12,7 @@ import {
 import { getMyProfile } from '@/lib/creator';
 import { CopyLinkButton } from '@/components/ui/CopyLinkButton';
 import MarkdownEditor from '@/components/ui/MarkdownEditor';
+import Link from 'next/link';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -278,9 +279,12 @@ function DownloadCard({
         )}
 
         {dl._count !== undefined && (
-          <p className="text-xs text-[#6B7280] mb-3">
+          <Link
+            href={`/dashboard/downloads/${dl.id}`}
+            className="text-xs text-[#6B7280] mb-3 hover:text-[#0D9488] transition-colors inline-block"
+          >
             📥 {dl._count.accesses} {dl._count.accesses === 1 ? 'download' : 'downloads'}
-          </p>
+          </Link>
         )}
 
         {shareUrl && dl.isPublished && (
