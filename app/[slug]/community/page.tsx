@@ -180,6 +180,28 @@ function FeedTab({
       // Auto-insert at top; dedup guard prevents showing twice if somehow received again
       setPosts((prev) => (prev.some((p) => p.id === post.id) ? prev : [post, ...prev]));
     },
+    onPostUpdated: (updatedPost) => {
+      setPosts((ps) => ps.map((p) => (p.id === updatedPost.id ? { ...p, ...updatedPost } : p)));
+    },
+    onCommentUpdated: (postId, updatedComment) => {
+      setPosts((ps) =>
+        ps.map((p) => {
+          if (p.id !== postId) return p;
+          return {
+            ...p,
+            comments: p.comments.map((c) => {
+              if (c.id === updatedComment.id) return { ...c, ...updatedComment, replies: c.replies };
+              return {
+                ...c,
+                replies: (c.replies ?? []).map((r) =>
+                  r.id === updatedComment.id ? { ...r, ...updatedComment } : r,
+                ),
+              };
+            }),
+          };
+        }),
+      );
+    },
     onPostDeleted: (postId) => {
       setPosts((ps) => ps.filter((p) => p.id !== postId));
     },

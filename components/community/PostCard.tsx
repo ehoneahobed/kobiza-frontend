@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Post, PostComment, CommentReactionCount, CommunityRole, addComment, deleteComment, toggleLike, deletePost, pinPost, toggleCommentReaction } from '@/lib/community';
+import { Post, PostComment, CommentReactionCount, CommunityRole, addComment, deleteComment, updatePost, updateComment, toggleLike, deletePost, pinPost, toggleCommentReaction } from '@/lib/community';
 import { renderWithMentions } from '@/lib/renderWithMentions';
 import MentionInput from './MentionInput';
 
@@ -87,6 +87,16 @@ export default function PostCard({ post, communityId, currentUserId, currentUser
   const [replyText, setReplyText] = useState('');
   const [replyMentionMap, setReplyMentionMap] = useState<Map<string, string>>(new Map());
   const [addingReply, setAddingReply] = useState(false);
+  // Post editing state
+  const [isEditingPost, setIsEditingPost] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [editMentionMap, setEditMentionMap] = useState<Map<string, string>>(new Map());
+  const [savingEdit, setSavingEdit] = useState(false);
+  // Comment editing state
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editCommentContent, setEditCommentContent] = useState('');
+  const [editCommentMentionMap, setEditCommentMentionMap] = useState<Map<string, string>>(new Map());
+  const [savingCommentEdit, setSavingCommentEdit] = useState(false);
 
   // Stable string derived from parent's comment IDs (including replies)
   const allCommentIds = post.comments.flatMap((c) => [c.id, ...(c.replies ?? []).map((r) => r.id)]).join(',');
@@ -255,43 +265,147 @@ export default function PostCard({ post, communityId, currentUserId, currentUser
     onUpdate(updated as Post);
   };
 
+  const handleEditPost = () => {
+    setEditContent(localPost.content);
+    setEditMentionMap(new Map());
+    setIsEditingPost(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim()) return;
+    setSavingEdit(true);
+    try {
+      const mentionedUserIds = Array.from(editMentionMap.values());
+      const updated = await updatePost(localPost.id, {
+        content: editContent.trim(),
+        mentionedUserIds: mentionedUserIds.length ? mentionedUserIds : undefined,
+      });
+      setLocalPost(updated);
+      onUpdate(updated);
+      setIsEditingPost(false);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleEditComment = (comment: PostComment) => {
+    setEditingCommentId(comment.id);
+    setEditCommentContent(comment.content);
+    setEditCommentMentionMap(new Map());
+  };
+
+  const handleSaveCommentEdit = async (commentId: string, parentId?: string | null) => {
+    if (!editCommentContent.trim()) return;
+    setSavingCommentEdit(true);
+    try {
+      const mentionedUserIds = Array.from(editCommentMentionMap.values());
+      const updated = await updateComment(commentId, {
+        content: editCommentContent.trim(),
+        mentionedUserIds: mentionedUserIds.length ? mentionedUserIds : undefined,
+      });
+      setLocalPost((p) => ({
+        ...p,
+        comments: p.comments.map((c) => {
+          if (c.id === commentId) return { ...c, ...updated };
+          return {
+            ...c,
+            replies: (c.replies ?? []).map((r) => (r.id === commentId ? { ...r, ...updated } : r)),
+          };
+        }),
+      }));
+      setEditingCommentId(null);
+    } finally {
+      setSavingCommentEdit(false);
+    }
+  };
+
+  const isEdited = (createdAt: string, updatedAt?: string) => {
+    if (!updatedAt) return false;
+    return createdAt.slice(0, 16) !== updatedAt.slice(0, 16);
+  };
+
   const canDelete = localPost.author.id === currentUserId || canModerate;
   const canPin = canModerate;
+  const canEditPost = localPost.author.id === currentUserId;
 
   const renderComment = (comment: PostComment, isReply = false) => (
     <div key={comment.id} className={`flex gap-2.5 group ${isReply ? 'ml-10' : ''}`}>
       <Avatar name={comment.author.name} avatarUrl={comment.author.avatarUrl} />
       <div className="flex-1 min-w-0">
-        <div className="bg-white rounded-lg px-3 py-2 text-sm">
-          <div className="flex items-baseline gap-2">
-            <span className="font-medium text-[#1F2937] text-xs">{comment.author.name}</span>
-            <span className="text-[#6B7280] text-xs">{timeAgo(comment.createdAt)}</span>
-            {(comment.author.id === currentUserId || canModerate) && (
+        {editingCommentId === comment.id ? (
+          <div className="bg-white rounded-lg px-3 py-2">
+            <MentionInput
+              communityId={communityId}
+              value={editCommentContent}
+              onChange={(val, map) => { setEditCommentContent(val); setEditCommentMentionMap(map); }}
+              placeholder="Edit comment…"
+              rows={2}
+              className="w-full rounded-lg border border-[#6B7280]/30 px-3 py-2 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488] bg-white resize-none"
+              disabled={savingCommentEdit}
+            />
+            <div className="flex gap-2 mt-2">
               <button
-                onClick={() => handleDeleteComment(comment.id, comment.parentId)}
-                className="text-[#6B7280] text-xs hover:text-[#EF4444] ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleSaveCommentEdit(comment.id, comment.parentId)}
+                disabled={!editCommentContent.trim() || savingCommentEdit}
+                className="bg-[#0D9488] text-white rounded-full px-3 py-1 text-xs font-medium disabled:opacity-40 hover:bg-teal-700 transition-colors"
               >
-                ×
+                Save
+              </button>
+              <button
+                onClick={() => setEditingCommentId(null)}
+                className="text-xs text-[#6B7280] hover:text-[#1F2937]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="bg-white rounded-lg px-3 py-2 text-sm">
+              <div className="flex items-baseline gap-2">
+                <span className="font-medium text-[#1F2937] text-xs">{comment.author.name}</span>
+                <span className="text-[#6B7280] text-xs">{timeAgo(comment.createdAt)}</span>
+                {isEdited(comment.createdAt, comment.updatedAt) && (
+                  <span className="text-[#9CA3AF] text-xs italic">(edited)</span>
+                )}
+                <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {comment.author.id === currentUserId && (
+                    <button
+                      onClick={() => handleEditComment(comment)}
+                      className="text-[#6B7280] text-xs hover:text-[#0D9488]"
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {(comment.author.id === currentUserId || canModerate) && (
+                    <button
+                      onClick={() => handleDeleteComment(comment.id, comment.parentId)}
+                      className="text-[#6B7280] text-xs hover:text-[#EF4444]"
+                    >
+                      ×
+                    </button>
+                  )}
+                </span>
+              </div>
+              <p className="text-[#1F2937] mt-0.5 whitespace-pre-wrap">
+                {renderWithMentions(comment.content)}
+              </p>
+            </div>
+            <ReactionBar
+              reactions={comment.reactions ?? []}
+              currentUserId={currentUserId}
+              onToggle={(emoji) => handleToggleReaction(comment.id, emoji, comment.parentId)}
+            />
+            {/* Reply button — only for top-level comments */}
+            {!isReply && (
+              <button
+                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                className="text-xs text-[#6B7280] hover:text-[#0D9488] mt-1 ml-1 transition-colors"
+              >
+                Reply
               </button>
             )}
-          </div>
-          <p className="text-[#1F2937] mt-0.5 whitespace-pre-wrap">
-            {renderWithMentions(comment.content)}
-          </p>
-        </div>
-        <ReactionBar
-          reactions={comment.reactions ?? []}
-          currentUserId={currentUserId}
-          onToggle={(emoji) => handleToggleReaction(comment.id, emoji, comment.parentId)}
-        />
-        {/* Reply button — only for top-level comments */}
-        {!isReply && (
-          <button
-            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-            className="text-xs text-[#6B7280] hover:text-[#0D9488] mt-1 ml-1 transition-colors"
-          >
-            Reply
-          </button>
+          </>
         )}
       </div>
     </div>
@@ -325,6 +439,14 @@ export default function PostCard({ post, communityId, currentUserId, currentUser
           </div>
           {/* Action menu */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {canEditPost && !isEditingPost && (
+              <button
+                onClick={handleEditPost}
+                className="text-xs text-[#6B7280] hover:text-[#0D9488] transition-colors"
+              >
+                Edit
+              </button>
+            )}
             {canPin && (
               <button
                 onClick={handlePin}
@@ -346,9 +468,43 @@ export default function PostCard({ post, communityId, currentUserId, currentUser
         </div>
 
         {/* Post content */}
-        <p className="text-[#1F2937] leading-relaxed whitespace-pre-wrap text-sm mb-4">
-          {renderWithMentions(localPost.content)}
-        </p>
+        {isEditingPost ? (
+          <div className="mb-4">
+            <MentionInput
+              communityId={communityId}
+              value={editContent}
+              onChange={(val, map) => { setEditContent(val); setEditMentionMap(map); }}
+              placeholder="Edit your post…"
+              rows={3}
+              className="w-full rounded-lg border border-[#6B7280]/30 px-4 py-2.5 text-sm text-[#1F2937] focus:outline-none focus:ring-2 focus:ring-[#0D9488] bg-white resize-none"
+              disabled={savingEdit}
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={handleSaveEdit}
+                disabled={!editContent.trim() || savingEdit}
+                className="bg-[#0D9488] text-white rounded-full px-4 py-1.5 text-xs font-medium disabled:opacity-40 hover:bg-teal-700 transition-colors"
+              >
+                {savingEdit ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                onClick={() => setIsEditingPost(false)}
+                className="text-xs text-[#6B7280] hover:text-[#1F2937] px-3 py-1.5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-[#1F2937] leading-relaxed whitespace-pre-wrap text-sm mb-1">
+              {renderWithMentions(localPost.content)}
+            </p>
+            {isEdited(localPost.createdAt, localPost.updatedAt) && (
+              <p className="text-[#9CA3AF] text-xs italic mb-3">(edited)</p>
+            )}
+          </>
+        )}
 
         {localPost.imageUrl && (
           <img

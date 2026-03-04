@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
 import { getStorefront } from '@/lib/creator';
 import { listDownloadablesBySlug } from '@/lib/downloadables';
 import { listProgramsBySlug } from '@/lib/coaching';
@@ -9,6 +10,27 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const profile = await getStorefront(slug);
+    const title = `${profile.user.name} — Kobiza`;
+    const description = profile.bio?.slice(0, 160) || `Check out ${profile.user.name}'s community, courses, and more on Kobiza.`;
+    const image = profile.coverUrl || profile.logoUrl;
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        ...(image ? { images: [image] } : {}),
+      },
+    };
+  } catch {
+    return { title: 'Creator — Kobiza' };
+  }
 }
 
 export default async function StorefrontPage({ params }: Props) {

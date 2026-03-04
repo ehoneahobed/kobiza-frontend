@@ -21,10 +21,14 @@ export interface PresenceUpdate {
 export interface CommunitySocketHandlers {
   /** A new post was published by someone else */
   onNewPost?: (post: Post) => void;
+  /** A post was updated (edited) */
+  onPostUpdated?: (post: Post) => void;
   /** A post was deleted */
   onPostDeleted?: (postId: string) => void;
   /** A post's pin state changed */
   onPostPinned?: (postId: string, isPinned: boolean) => void;
+  /** A comment was updated (edited) */
+  onCommentUpdated?: (postId: string, comment: PostComment) => void;
   /** A comment was added to a post */
   onNewComment?: (postId: string, comment: PostComment) => void;
   /** A comment was deleted */
@@ -87,12 +91,20 @@ export function useCommunitySocket(
         handlersRef.current.onNewPost?.(post);
       });
 
+      socket.on('post:updated', (post: Post) => {
+        handlersRef.current.onPostUpdated?.(post);
+      });
+
       socket.on('post:deleted', ({ postId }: { postId: string }) => {
         handlersRef.current.onPostDeleted?.(postId);
       });
 
       socket.on('post:pinned', ({ postId, isPinned }: { postId: string; isPinned: boolean }) => {
         handlersRef.current.onPostPinned?.(postId, isPinned);
+      });
+
+      socket.on('comment:updated', ({ postId, comment }: { postId: string; comment: PostComment }) => {
+        handlersRef.current.onCommentUpdated?.(postId, comment);
       });
 
       socket.on('comment:new', ({ postId, comment }: { postId: string; comment: PostComment }) => {

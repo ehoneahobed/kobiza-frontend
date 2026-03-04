@@ -34,6 +34,7 @@ export interface PostComment {
   id: string;
   content: string;
   createdAt: string;
+  updatedAt?: string;
   author: CommentAuthor;
   parentId: string | null;
   replies: PostComment[];
@@ -163,6 +164,16 @@ export async function createPost(
   });
 }
 
+export async function updatePost(
+  postId: string,
+  data: { content?: string; imageUrl?: string; categoryId?: string; mentionedUserIds?: string[] },
+): Promise<Post> {
+  return apiFetch(`/community/posts/${postId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function deletePost(postId: string): Promise<void> {
   return apiFetch(`/community/posts/${postId}`, { method: 'DELETE' });
 }
@@ -208,6 +219,16 @@ export interface MentionSuggestion {
 
 export async function searchMembers(communityId: string, q: string): Promise<MentionSuggestion[]> {
   return apiFetch(`/community/${communityId}/members/search?q=${encodeURIComponent(q)}`);
+}
+
+export async function updateComment(
+  commentId: string,
+  data: { content: string; mentionedUserIds?: string[] },
+): Promise<PostComment> {
+  return apiFetch(`/community/comments/${commentId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 }
 
 export async function deleteComment(commentId: string): Promise<void> {

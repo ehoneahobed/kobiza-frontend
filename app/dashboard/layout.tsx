@@ -21,6 +21,7 @@ const navItems: NavEntry[] = [
   { type: 'link', label: 'Submissions', href: '/dashboard/submissions', icon: '📋' },
   { type: 'link', label: 'AI Architect', href: '/dashboard/courses/ai-architect', icon: '✨', pro: true },
   { type: 'link', label: 'Content Engine', href: '/dashboard/content-engine', icon: '🔄', pro: true },
+  { type: 'link', label: 'Broadcast', href: '/dashboard/broadcast', icon: '📧' },
   { type: 'link', label: 'Earnings', href: '/dashboard/earnings', icon: '💰' },
   { type: 'link', label: 'Billing', href: '/dashboard/billing', icon: '💳' },
   { type: 'link', label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
