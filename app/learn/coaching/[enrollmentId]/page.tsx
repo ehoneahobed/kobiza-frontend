@@ -13,6 +13,10 @@ import {
   getAvailableSlots,
   book1on1,
   submitWork,
+  downloadSessionIcs,
+  downloadEnrollmentIcs,
+  pauseEnrollment,
+  resumeEnrollment,
   CoachingEnrollment,
   CoachingMessage,
   CoachingSession,
@@ -157,7 +161,44 @@ export default function CoachingProgramHomePage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* +Cal export */}
+              <button
+                onClick={() => downloadEnrollmentIcs(enrollmentId).catch(() => {})}
+                className="px-2.5 py-1 rounded-lg text-xs font-medium border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                title="Export all sessions to calendar"
+              >
+                +Cal
+              </button>
+
+              {/* Pause / Resume */}
+              {enrollment.status === 'ACTIVE' && enrollment.format === 'SUBSCRIPTION' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const updated = await pauseEnrollment(enrollmentId);
+                      setEnrollment((prev) => prev ? { ...prev, status: updated.status } : prev);
+                    } catch {}
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+                >
+                  Pause
+                </button>
+              )}
+              {enrollment.status === 'PAUSED' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const updated = await resumeEnrollment(enrollmentId);
+                      setEnrollment((prev) => prev ? { ...prev, status: updated.status } : prev);
+                    } catch {}
+                  }}
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium bg-teal-100 text-teal-700 hover:bg-teal-200 transition-colors"
+                >
+                  Resume
+                </button>
+              )}
+
               {/* Status chip */}
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusChip.bg} ${statusChip.text}`}>
                 {statusChip.label}
@@ -714,6 +755,13 @@ function SessionsTab({
                   {s.weekNumber && <p className="text-xs text-gray-500">Week {s.weekNumber}</p>}
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => downloadSessionIcs(s.id).catch(() => {})}
+                    className="text-xs font-medium px-2.5 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Add to calendar"
+                  >
+                    +Cal
+                  </button>
                   {s.meetingUrl && (
                     <a
                       href={s.meetingUrl}

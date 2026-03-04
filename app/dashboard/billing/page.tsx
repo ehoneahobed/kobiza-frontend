@@ -7,8 +7,11 @@ import {
   createBillingCheckout,
   cancelBillingSubscription,
   resumeBillingSubscription,
+  openCustomerPortal,
+  getDowngradePreview,
   CreatorPlan,
   PlanTier,
+  DowngradePreview,
   PLAN_DETAILS,
 } from '@/lib/billing';
 
@@ -156,6 +159,7 @@ function BillingContent() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState('');
+  const [downgradePreview, setDowngradePreview] = useState<DowngradePreview | null>(null);
 
   useEffect(() => {
     getMyPlan()
@@ -186,13 +190,40 @@ function BillingContent() {
   };
 
   const handleCancel = async () => {
-    if (!confirm('Cancel your plan? You\'ll keep access until the end of your billing period.')) return;
     setActionLoading(true);
     try {
+      // Fetch downgrade preview to warn about archived communities
+      const preview = await getDowngradePreview('FREE');
+      if (preview.atRisk.length > 0) {
+        setDowngradePreview(preview);
+        setActionLoading(false);
+        return; // Show modal instead of confirm()
+      }
+
+      if (!confirm('Cancel your plan? You\'ll keep access until the end of your billing period.')) {
+        setActionLoading(false);
+        return;
+      }
+
       await cancelBillingSubscription();
       const updated = await getMyPlan();
       setPlan(updated);
       showToast('Subscription cancelled. Access continues until the billing period ends.');
+    } catch {
+      showToast('Failed to cancel. Please try again.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const confirmDowngrade = async () => {
+    setActionLoading(true);
+    setDowngradePreview(null);
+    try {
+      await cancelBillingSubscription();
+      const updated = await getMyPlan();
+      setPlan(updated);
+      showToast('Subscription cancelled. Excess communities will be archived at the end of the billing period.');
     } catch {
       showToast('Failed to cancel. Please try again.');
     } finally {
@@ -228,6 +259,46 @@ function BillingContent() {
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-[#1F2937] text-white px-5 py-3 rounded-xl shadow-xl text-sm font-medium">
           {toast}
+        </div>
+      )}
+
+      {/* Downgrade Warning Modal */}
+      {downgradePreview && downgradePreview.atRisk.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-[#1F2937] mb-2">Communities will be archived</h3>
+            <p className="text-sm text-[#6B7280] mb-4">
+              Downgrading to the Free plan allows only {downgradePreview.limit} community.
+              The following {downgradePreview.atRisk.length === 1 ? 'community' : 'communities'} will be
+              archived when your billing period ends:
+            </p>
+            <ul className="space-y-2 mb-4">
+              {downgradePreview.atRisk.map((c) => (
+                <li key={c.id} className="flex items-center gap-2 bg-red-50 text-red-800 rounded-lg px-3 py-2 text-sm font-medium">
+                  <span className="text-red-400">&#x2717;</span>
+                  {c.name}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-[#6B7280] mb-4">
+              No data will be deleted. Upgrade again anytime to restore your archived communities.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDowngradePreview(null)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-[#6B7280] border border-[#6B7280]/30 hover:bg-gray-50 transition-colors"
+              >
+                Keep My Plan
+              </button>
+              <button
+                onClick={confirmDowngrade}
+                disabled={actionLoading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {actionLoading ? 'Cancelling...' : 'Cancel Anyway'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -281,6 +352,29 @@ function BillingContent() {
           />
         ))}
       </div>
+
+      {/* Payment Methods & Invoices */}
+      {plan?.stripeCustomerId && (
+        <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="font-bold text-[#1F2937] mb-2">Payment Methods & Invoices</h2>
+          <p className="text-sm text-[#6B7280] mb-4">
+            Manage your payment methods, view invoices, and update billing information through the Stripe Customer Portal.
+          </p>
+          <button
+            onClick={async () => {
+              try {
+                const { url } = await openCustomerPortal();
+                if (url) window.location.href = url;
+              } catch {
+                showToast('Failed to open billing portal. Please try again.');
+              }
+            }}
+            className="bg-[#0D9488] text-white font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-teal-700 transition-colors"
+          >
+            Manage Payment Methods
+          </button>
+        </div>
+      )}
 
       {/* Fee calculator */}
       <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">

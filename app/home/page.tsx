@@ -7,7 +7,7 @@ import { getMe, clearToken, AuthUser } from '@/lib/auth';
 import { getMyMemberships, MyMembership } from '@/lib/community';
 import { getMyEnrollments, MyEnrollment } from '@/lib/courses';
 import { getMyDownloads, MyDownload, formatDownloadPrice } from '@/lib/downloadables';
-import { getMyEnrollments as getMyCoachingEnrollments, CoachingEnrollment, formatSessionTime } from '@/lib/coaching';
+import { getMyEnrollments as getMyCoachingEnrollments, CoachingEnrollment, formatSessionTime, downloadEnrollmentIcs } from '@/lib/coaching';
 import { getMyActivity, DailyActivity } from '@/lib/activity';
 import ActivityHeatmap from '@/components/ActivityHeatmap';
 
@@ -527,6 +527,13 @@ export default function MemberHomePage() {
                         ) : null}
                       </div>
                       <div className="flex flex-col gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => downloadEnrollmentIcs(enrollment.id).catch(() => {})}
+                          className="flex-shrink-0 text-gray-600 text-xs font-medium px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors text-center"
+                          title="Export sessions to calendar"
+                        >
+                          +Cal
+                        </button>
                         {nextSession?.meetingUrl && (
                           <a
                             href={nextSession.meetingUrl}

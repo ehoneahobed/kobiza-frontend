@@ -47,6 +47,23 @@ export async function createBillingCheckout(plan: PlanTier): Promise<{ url: stri
   });
 }
 
+export async function openCustomerPortal(): Promise<{ url: string }> {
+  return apiFetch('/billing/customer-portal', { method: 'POST' });
+}
+
+export interface DowngradePreview {
+  currentPlan: PlanTier;
+  targetPlan: PlanTier;
+  totalCommunities: number;
+  limit: number | null;
+  safe: { id: string; name: string; createdAt: string }[];
+  atRisk: { id: string; name: string; createdAt: string }[];
+}
+
+export async function getDowngradePreview(targetPlan: PlanTier): Promise<DowngradePreview> {
+  return apiFetch(`/billing/downgrade-preview?targetPlan=${targetPlan}`);
+}
+
 export async function cancelBillingSubscription(): Promise<void> {
   return apiFetch('/billing/cancel', { method: 'POST' });
 }

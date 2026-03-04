@@ -144,12 +144,14 @@ export async function getPostsFeed(
   sort?: FeedSort,
   page?: number,
   limit?: number,
+  q?: string,
 ): Promise<FeedResponse> {
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId);
   if (sort && sort !== 'DEFAULT') params.set('sort', sort);
   if (page && page > 1) params.set('page', String(page));
   if (limit) params.set('limit', String(limit));
+  if (q) params.set('q', q);
   const qs = params.toString() ? `?${params.toString()}` : '';
   return apiFetch(`/community/${communityId}/posts${qs}`);
 }

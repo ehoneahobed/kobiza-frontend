@@ -130,6 +130,8 @@ function FeedTab({
   const [postMentionMap, setPostMentionMap] = useState<Map<string, string>>(new Map());
   const [postCategory, setPostCategory] = useState<string>('');
   const [posting, setPosting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Ref so the WebSocket handler reads the latest active category filter
   // without reconnecting every time the user switches category pills
@@ -137,11 +139,11 @@ function FeedTab({
   activeCatRef.current = activeCategoryId;
 
   const loadFeed = useCallback(
-    async (catId?: string, sort: FeedSort = 'DEFAULT', page = 1, append = false) => {
+    async (catId?: string, sort: FeedSort = 'DEFAULT', page = 1, append = false, q?: string) => {
       if (!append) setLoading(true);
       else setLoadingMore(true);
       try {
-        const result = await getPostsFeed(communityId, catId, sort, page);
+        const result = await getPostsFeed(communityId, catId, sort, page, undefined, q || undefined);
         if (append) {
           setPosts((prev) => [...prev, ...result.posts]);
         } else {
@@ -160,8 +162,8 @@ function FeedTab({
   );
 
   useEffect(() => {
-    loadFeed(activeCategoryId, feedSort, 1);
-  }, [loadFeed, activeCategoryId, feedSort]);
+    loadFeed(activeCategoryId, feedSort, 1, false, searchQuery);
+  }, [loadFeed, activeCategoryId, feedSort, searchQuery]);
 
   const handleSortChange = (sort: FeedSort) => {
     setFeedSort(sort);
@@ -169,7 +171,15 @@ function FeedTab({
   };
 
   const handleLoadMore = () => {
-    loadFeed(activeCategoryId, feedSort, feedPage + 1, true);
+    loadFeed(activeCategoryId, feedSort, feedPage + 1, true, searchQuery);
+  };
+
+  const handleSearchInput = (value: string) => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setSearchQuery(value);
+      setFeedPage(1);
+    }, 350);
   };
 
   // WebSocket: one persistent connection; server pushes all events instantly
@@ -382,6 +392,19 @@ function FeedTab({
         </div>
       )}
 
+      {/* Search */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search posts..."
+          onChange={(e) => handleSearchInput(e.target.value)}
+          className="w-full bg-white border border-[#6B7280]/20 rounded-xl px-4 py-2.5 pl-10 text-sm text-[#1F2937] placeholder-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#0D9488] focus:border-transparent"
+        />
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
       {/* Category filter pills + Sort */}
       <div className="flex items-center gap-2 flex-wrap">
         {categories.length > 0 && (
@@ -434,9 +457,15 @@ function FeedTab({
         </div>
       ) : posts.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm p-10 text-center">
-          <div className="text-4xl mb-3">💬</div>
-          <p className="font-semibold text-[#1F2937]">No posts yet</p>
-          <p className="text-sm text-[#6B7280] mt-1">Be the first to start a conversation!</p>
+          <div className="text-4xl mb-3">{searchQuery ? '🔍' : '💬'}</div>
+          <p className="font-semibold text-[#1F2937]">
+            {searchQuery ? 'No posts found' : 'No posts yet'}
+          </p>
+          <p className="text-sm text-[#6B7280] mt-1">
+            {searchQuery
+              ? `No posts matching "${searchQuery}". Try a different search.`
+              : 'Be the first to start a conversation!'}
+          </p>
         </div>
       ) : (
         <>

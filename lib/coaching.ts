@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch, API_URL } from './api';
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
@@ -26,7 +26,7 @@ export interface CurriculumWeek {
 
 export type CoachingSessionStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 
-export type CoachingEnrollmentStatus = 'ACTIVE' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
+export type CoachingEnrollmentStatus = 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED';
 
 // ── Models ────────────────────────────────────────────────────────────────────
 
@@ -545,4 +545,46 @@ export async function getCoachingMessages(enrollmentId: string): Promise<Coachin
 
 export async function markCoachingMessagesRead(enrollmentId: string): Promise<{ updated: number }> {
   return apiFetch(`/coaching/enrollments/${enrollmentId}/messages/read`, { method: 'PATCH' });
+}
+
+// ── ICS Calendar Export ──────────────────────────────────────────────────────
+
+export async function downloadSessionIcs(sessionId: string): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('Kobiza_token') : null;
+  const res = await fetch(`${API_URL}/api/coaching/sessions/${sessionId}/ics`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error('Failed to download ICS');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'session.ics';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function downloadEnrollmentIcs(enrollmentId: string): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('Kobiza_token') : null;
+  const res = await fetch(`${API_URL}/api/coaching/enrollments/${enrollmentId}/ics`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error('Failed to download ICS');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sessions.ics';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Coaching Pause / Resume ──────────────────────────────────────────────────
+
+export async function pauseEnrollment(enrollmentId: string): Promise<CoachingEnrollment> {
+  return apiFetch(`/coaching/enrollments/${enrollmentId}/pause`, { method: 'POST' });
+}
+
+export async function resumeEnrollment(enrollmentId: string): Promise<CoachingEnrollment> {
+  return apiFetch(`/coaching/enrollments/${enrollmentId}/resume`, { method: 'POST' });
 }
