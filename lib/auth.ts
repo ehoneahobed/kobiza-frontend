@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   role: 'CREATOR' | 'MEMBER';
   avatarUrl: string | null;
+  showActivityGraph: boolean;
 }
 
 export interface AuthResult {
@@ -53,7 +54,7 @@ export async function resetPassword(token: string, password: string) {
   });
 }
 
-export async function updateMe(data: { name?: string; avatarUrl?: string }): Promise<AuthUser> {
+export async function updateMe(data: { name?: string; avatarUrl?: string; showActivityGraph?: boolean }): Promise<AuthUser> {
   return apiFetch('/auth/me', { method: 'PATCH', body: JSON.stringify(data) });
 }
 

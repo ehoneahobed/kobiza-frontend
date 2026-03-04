@@ -43,6 +43,8 @@ import LeaderboardList from '@/components/community/LeaderboardList';
 import WelcomeCard from '@/components/community/WelcomeCard';
 import CalendarView from '@/components/community/CalendarView';
 import DirectMessages from '@/components/community/DirectMessages';
+import { getUserActivity, DailyActivity } from '@/lib/activity';
+import ActivityHeatmap from '@/components/ActivityHeatmap';
 
 type Tab = 'feed' | 'calendar' | 'classroom' | 'members' | 'leaderboard' | 'about';
 
@@ -623,6 +625,47 @@ function RoleBadge({ role }: { role: CommunityRole }) {
   return null;
 }
 
+function MemberActivitySection({ memberId }: { memberId: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [activityData, setActivityData] = useState<DailyActivity[] | null>(null);
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  const handleToggle = () => {
+    if (!expanded && activityData === null) {
+      setActivityLoading(true);
+      getUserActivity(memberId)
+        .then(setActivityData)
+        .catch(() => setActivityData([]))
+        .finally(() => setActivityLoading(false));
+    }
+    setExpanded((v) => !v);
+  };
+
+  return (
+    <div className="mt-3 pt-3 border-t border-[#F3F4F6]">
+      <button
+        onClick={handleToggle}
+        className="text-xs font-medium text-[#0D9488] hover:underline"
+      >
+        {expanded ? 'Hide Activity' : 'View Activity'}
+      </button>
+      {expanded && (
+        <div className="mt-3">
+          {activityLoading ? (
+            <div className="flex justify-center py-4">
+              <div className="w-5 h-5 border-2 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : activityData && activityData.length > 0 ? (
+            <ActivityHeatmap data={activityData} />
+          ) : (
+            <p className="text-xs text-[#6B7280] py-2">No activity data available.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MembersTab({
   communityId,
   currentUserId,
@@ -816,6 +859,9 @@ function MembersTab({
                   )}
                 </div>
               )}
+
+              {/* Activity heatmap expand */}
+              <MemberActivitySection memberId={member.id} />
             </div>
           );
         })}

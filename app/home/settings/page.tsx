@@ -19,6 +19,9 @@ export default function MemberSettingsPage() {
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [profileError, setProfileError] = useState('');
 
+  // Privacy
+  const [showActivityGraph, setShowActivityGraph] = useState(true);
+
   // Password reset
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -34,6 +37,7 @@ export default function MemberSettingsPage() {
         setUser(u);
         setName(u.name);
         setAvatarUrl(u.avatarUrl ?? '');
+        setShowActivityGraph(u.showActivityGraph);
       })
       .catch(() => router.push('/login'))
       .finally(() => setLoading(false));
@@ -163,6 +167,45 @@ export default function MemberSettingsPage() {
               Save Profile
             </Button>
           </form>
+        </div>
+
+        {/* Privacy section */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="font-bold text-[#1F2937] text-lg mb-1">Privacy</h2>
+          <p className="text-sm text-[#6B7280] mb-5">Control what other community members can see.</p>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-[#1F2937]">Activity Graph</p>
+              <p className="text-xs text-[#6B7280] mt-0.5">
+                Show your activity heatmap on your profile in community member lists.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showActivityGraph}
+              onClick={async () => {
+                const prev = showActivityGraph;
+                setShowActivityGraph(!prev);
+                try {
+                  const updated = await updateMe({ showActivityGraph: !prev });
+                  setUser(updated);
+                } catch {
+                  setShowActivityGraph(prev);
+                }
+              }}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                showActivityGraph ? 'bg-[#0D9488]' : 'bg-[#D1D5DB]'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  showActivityGraph ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Password section */}

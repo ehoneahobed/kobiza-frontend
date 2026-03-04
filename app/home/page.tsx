@@ -8,6 +8,8 @@ import { getMyMemberships, MyMembership } from '@/lib/community';
 import { getMyEnrollments, MyEnrollment } from '@/lib/courses';
 import { getMyDownloads, MyDownload, formatDownloadPrice } from '@/lib/downloadables';
 import { getMyEnrollments as getMyCoachingEnrollments, CoachingEnrollment, formatSessionTime } from '@/lib/coaching';
+import { getMyActivity, DailyActivity } from '@/lib/activity';
+import ActivityHeatmap from '@/components/ActivityHeatmap';
 
 // ── Nav items ──────────────────────────────────────────────────────────────
 const NAV = [
@@ -273,6 +275,7 @@ export default function MemberHomePage() {
   const [enrollments, setEnrollments] = useState<MyEnrollment[]>([]);
   const [myDownloads, setMyDownloads] = useState<MyDownload[]>([]);
   const [myCoachingEnrollments, setMyCoachingEnrollments] = useState<CoachingEnrollment[]>([]);
+  const [activityData, setActivityData] = useState<DailyActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const toggleSidebar = useCallback(() => setSidebarCollapsed((p) => !p), []);
@@ -286,11 +289,13 @@ export default function MemberHomePage() {
           getMyEnrollments().catch(() => [] as MyEnrollment[]),
           getMyDownloads().catch(() => [] as MyDownload[]),
           getMyCoachingEnrollments().catch(() => [] as CoachingEnrollment[]),
-        ]).then(([m, e, d, b]) => {
+          getMyActivity().catch(() => [] as DailyActivity[]),
+        ]).then(([m, e, d, b, a]) => {
           setMemberships(m);
           setEnrollments(e);
           setMyDownloads(d);
           setMyCoachingEnrollments(b);
+          setActivityData(a);
         });
       })
       .catch(() => router.push('/login'))
@@ -357,6 +362,9 @@ export default function MemberHomePage() {
           {!hasAnything && (
             <DiscoverBanner />
           )}
+
+          {/* ── Activity Heatmap ── */}
+          <ActivityHeatmap data={activityData} />
 
           {/* ── Continue Learning (in-progress) ── */}
           {inProgress.length > 0 && (
