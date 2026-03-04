@@ -37,7 +37,7 @@ export default function CourseLandingPage() {
       .finally(() => setLoading(false));
   }, [courseId, slug, router]);
 
-  if (loading || !course) {
+  if (loading || !course || !course.creatorProfile) {
     return (
       <div className="min-h-screen bg-[#F3F4F6] flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />

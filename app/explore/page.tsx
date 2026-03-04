@@ -29,6 +29,7 @@ const TABS: { key: FilterTab; label: string; emoji: string }[] = [
 // ── Card Components ────────────────────────────────────────────────────────
 
 function CommunityCard({ item }: { item: ExploreCommunity }) {
+  if (!item.creatorProfile) return null;
   const brand = item.creatorProfile.brandColor ?? '#0D9488';
   return (
     <Link
@@ -72,6 +73,7 @@ function CommunityCard({ item }: { item: ExploreCommunity }) {
 }
 
 function CourseCard({ item }: { item: ExploreCourse }) {
+  if (!item.creatorProfile) return null;
   const creator = item.creatorProfile;
   const brand = creator.brandColor ?? '#0D9488';
   return (
@@ -129,6 +131,7 @@ function CourseCard({ item }: { item: ExploreCourse }) {
 }
 
 function DownloadCard({ item }: { item: ExploreDownload }) {
+  if (!item.creatorProfile) return null;
   const brand = item.creatorProfile.brandColor ?? '#0D9488';
   return (
     <Link
@@ -182,6 +185,7 @@ function DownloadCard({ item }: { item: ExploreDownload }) {
 }
 
 function CoachingCard({ item }: { item: ExploreCoaching }) {
+  if (!item.creatorProfile) return null;
   const brand = item.creatorProfile.brandColor ?? '#0D9488';
   return (
     <Link

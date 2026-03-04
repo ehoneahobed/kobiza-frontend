@@ -112,7 +112,7 @@ export default function DownloadLandingPage() {
     );
   }
 
-  if (!dl) return null;
+  if (!dl || !dl.creatorProfile) return null;
 
   const isFree = dl.price === 0;
   const { creatorProfile } = dl;
