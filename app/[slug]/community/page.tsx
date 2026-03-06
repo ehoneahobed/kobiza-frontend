@@ -43,8 +43,10 @@ import LeaderboardList from '@/components/community/LeaderboardList';
 import WelcomeCard from '@/components/community/WelcomeCard';
 import CalendarView from '@/components/community/CalendarView';
 import DirectMessages from '@/components/community/DirectMessages';
+import CommunitySwitcher from '@/components/community/CommunitySwitcher';
 import { getUserActivity, DailyActivity } from '@/lib/activity';
 import ActivityHeatmap from '@/components/ActivityHeatmap';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 type Tab = 'feed' | 'calendar' | 'classroom' | 'members' | 'leaderboard' | 'about';
 
@@ -130,6 +132,8 @@ function FeedTab({
   const [postMentionMap, setPostMentionMap] = useState<Map<string, string>>(new Map());
   const [postCategory, setPostCategory] = useState<string>('');
   const [posting, setPosting] = useState(false);
+  const [postImageUrl, setPostImageUrl] = useState('');
+  const [showImageUpload, setShowImageUpload] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -318,6 +322,7 @@ function FeedTab({
       const mentionedUserIds = Array.from(postMentionMap.values());
       const post = await createPost(communityId, {
         content: postContent.trim(),
+        imageUrl: postImageUrl || undefined,
         categoryId: postCategory || undefined,
         mentionedUserIds: mentionedUserIds.length ? mentionedUserIds : undefined,
       });
@@ -325,6 +330,8 @@ function FeedTab({
       setPostContent('');
       setPostMentionMap(new Map());
       setPostCategory('');
+      setPostImageUrl('');
+      setShowImageUpload(false);
     } finally {
       setPosting(false);
     }
@@ -353,6 +360,36 @@ function FeedTab({
               className="w-full rounded-lg border border-[#F3F4F6] bg-[#F3F4F6] px-4 py-3 text-[#1F2937] placeholder-[#6B7280] focus:outline-none focus:ring-2 focus:ring-[#0D9488] resize-none text-sm"
               disabled={posting}
             />
+            {/* Image preview */}
+            {postImageUrl && (
+              <div className="mt-2 relative inline-block">
+                <img
+                  src={postImageUrl}
+                  alt="Attached"
+                  className="h-20 rounded-lg object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setPostImageUrl(''); setShowImageUpload(false); }}
+                  className="absolute -top-2 -right-2 w-5 h-5 bg-[#EF4444] text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600"
+                >
+                  x
+                </button>
+              </div>
+            )}
+
+            {/* Image upload inline */}
+            {showImageUpload && !postImageUrl && (
+              <div className="mt-2">
+                <ImageUpload
+                  value=""
+                  onChange={(url) => setPostImageUrl(url)}
+                  purpose="post-image"
+                  maxSizeMB={5}
+                />
+              </div>
+            )}
+
             <div className="flex items-center gap-3 mt-3">
               {categories.length > 0 && (
                 <select
@@ -368,6 +405,21 @@ function FeedTab({
                   ))}
                 </select>
               )}
+              <button
+                type="button"
+                onClick={() => setShowImageUpload((s) => !s)}
+                className={`p-2 rounded-lg transition-colors ${
+                  showImageUpload || postImageUrl
+                    ? 'text-[#0D9488] bg-teal-50'
+                    : 'text-[#6B7280] hover:text-[#0D9488] hover:bg-[#F3F4F6]'
+                }`}
+                title="Attach image"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                </svg>
+              </button>
               <button
                 type="submit"
                 disabled={!postContent.trim() || posting}
@@ -1605,18 +1657,12 @@ function CommunityHubContent() {
       <header className="bg-white border-b border-[#F3F4F6] sticky top-0 z-20 shadow-sm">
         <div className="max-w-5xl mx-auto px-4">
           <div className="flex items-center gap-4 py-3 border-b border-[#F3F4F6]">
-            <Link
-              href={`/${slug}`}
-              className="flex items-center gap-2 text-[#1F2937] font-bold text-base hover:opacity-80 transition-opacity"
-            >
-              <span
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ background: brand }}
-              >
-                {community.name.charAt(0).toUpperCase()}
-              </span>
-              {community.name}
-            </Link>
+            <CommunitySwitcher
+              currentCommunityId={community.id}
+              currentCommunityName={community.name}
+              brandColor={brand}
+              isCreator={isCreator}
+            />
             {currentUserId && isMember && (
               <div className="ml-auto flex items-center gap-3">
                 {/* DM chat icon */}

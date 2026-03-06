@@ -12,6 +12,7 @@ import {
 } from '@/lib/downloadables';
 import { getMyProfile } from '@/lib/creator';
 import { CopyLinkButton } from '@/components/ui/CopyLinkButton';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import MarkdownEditor from '@/components/ui/MarkdownEditor';
 import Link from 'next/link';
 
@@ -187,16 +188,14 @@ function DownloadableModal({
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-[#1F2937] mb-1.5">Cover Image URL</label>
-            <input
-              value={form.coverUrl}
-              onChange={(e) => set('coverUrl', e.target.value)}
-              placeholder="https://... (optional)"
-              type="url"
-              className={inputCls}
-            />
-          </div>
+          <ImageUpload
+            label="Cover Image"
+            value={form.coverUrl}
+            onChange={(url) => set('coverUrl', url)}
+            purpose="download-cover"
+            aspectRatio={16 / 9}
+            maxSizeMB={5}
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div>

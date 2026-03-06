@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getMyProfile, updateMyProfile, CreatorProfile } from '@/lib/creator';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import MarkdownEditor from '@/components/ui/MarkdownEditor';
 
 export default function SettingsPage() {
@@ -153,19 +154,22 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
-            <Input
-              label="Logo URL"
-              type="url"
+            <ImageUpload
+              label="Logo"
               value={form.logoUrl}
-              onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
-              placeholder="https://..."
+              onChange={(url) => setForm((f) => ({ ...f, logoUrl: url }))}
+              purpose="logo"
+              aspectRatio={1}
+              maxSizeMB={2}
+              shape="round"
             />
-            <Input
-              label="Cover Image URL"
-              type="url"
+            <ImageUpload
+              label="Cover Image"
               value={form.coverUrl}
-              onChange={(e) => setForm((f) => ({ ...f, coverUrl: e.target.value }))}
-              placeholder="https://..."
+              onChange={(url) => setForm((f) => ({ ...f, coverUrl: url }))}
+              purpose="profile-cover"
+              aspectRatio={3}
+              maxSizeMB={5}
             />
           </div>
         </div>

@@ -16,6 +16,7 @@ import {
 import { getMyProfile, getMyCommunities } from '@/lib/creator';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { CopyLinkButton } from '@/components/ui/CopyLinkButton';
 import MarkdownEditor from '@/components/ui/MarkdownEditor';
 
@@ -182,11 +183,13 @@ export default function CoursesPage() {
                   placeholder="What will students learn?"
                   rows={3}
                 />
-                <Input
-                  label="Cover Image URL (optional)"
-                  placeholder="https://..."
+                <ImageUpload
+                  label="Cover Image (optional)"
                   value={form.coverUrl}
-                  onChange={(e) => setForm((f) => ({ ...f, coverUrl: e.target.value }))}
+                  onChange={(url) => setForm((f) => ({ ...f, coverUrl: url }))}
+                  purpose="course-cover"
+                  aspectRatio={16 / 9}
+                  maxSizeMB={5}
                 />
               </div>
 

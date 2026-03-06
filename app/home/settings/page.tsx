@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { getMe, updateMe, forgotPassword, upgradeToCreator, clearToken, AuthUser } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 
 export default function MemberSettingsPage() {
   const router = useRouter();
@@ -144,12 +145,14 @@ export default function MemberSettingsPage() {
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
             />
-            <Input
-              label="Avatar URL"
-              type="url"
+            <ImageUpload
+              label="Avatar"
               value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://... (profile photo URL)"
+              onChange={(url) => setAvatarUrl(url)}
+              purpose="avatar"
+              aspectRatio={1}
+              maxSizeMB={2}
+              shape="round"
             />
 
             {profileError && (
