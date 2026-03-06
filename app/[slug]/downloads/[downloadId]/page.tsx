@@ -14,14 +14,9 @@ import { getToken } from '@/lib/auth';
 import { createCheckoutSession } from '@/lib/payments';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
-function getGateway(): 'stripe' | 'paystack' {
-  // Simple heuristic: use Paystack for African currencies
-  return 'stripe';
-}
-
 // ── Page ────────────────────────────────────────────────────────────────────
+
+type CheckoutStep = 'idle' | 'select-gateway' | 'loading';
 
 export default function DownloadLandingPage() {
   const { slug, downloadId } = useParams<{ slug: string; downloadId: string }>();
@@ -36,6 +31,7 @@ export default function DownloadLandingPage() {
   const [phone, setPhone] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [customFieldData, setCustomFieldData] = useState<Record<string, string>>({});
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('idle');
 
   useEffect(() => {
     getDownloadablePublic(downloadId)
@@ -93,16 +89,20 @@ export default function DownloadLandingPage() {
     }
   };
 
-  const handleBuy = async () => {
+  const handleBuy = () => {
     if (!getToken()) {
       router.push(`/login?next=/${slug}/downloads/${downloadId}`);
       return;
     }
     if (!validateLeadForm()) return;
+    setCheckoutStep('select-gateway');
+  };
+
+  const handleGatewayCheckout = async (gateway: 'stripe' | 'paystack') => {
+    setCheckoutStep('loading');
     setActionLoading(true);
     setError('');
     try {
-      // Store lead data for extraction in webhook
       const leadData = buildLeadData();
       if (Object.keys(leadData).length > 0) {
         localStorage.setItem(`kobiza_lead_${downloadId}`, JSON.stringify(leadData));
@@ -110,12 +110,13 @@ export default function DownloadLandingPage() {
       const result = await createCheckoutSession({
         productId: downloadId,
         productType: 'download',
-        gateway: getGateway(),
+        gateway,
       });
       if ('url' in result && result.url) window.location.href = result.url;
       else if ('authorization_url' in result) window.location.href = result.authorization_url;
     } catch (err: any) {
       setError(err?.message ?? 'Failed to start checkout.');
+      setCheckoutStep('select-gateway');
     } finally {
       setActionLoading(false);
     }
@@ -359,6 +360,52 @@ export default function DownloadLandingPage() {
           </ul>
         </div>
       </div>
+
+      {/* Payment gateway modal */}
+      {(checkoutStep === 'select-gateway' || checkoutStep === 'loading') && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            {checkoutStep === 'loading' ? (
+              <div className="flex flex-col items-center py-8 gap-3">
+                <div className="w-10 h-10 border-4 border-[#0D9488] border-t-transparent rounded-full animate-spin" />
+                <p className="text-[#6B7280] text-sm">Preparing checkout...</p>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-lg font-bold text-[#1F2937] mb-1">Choose Payment Method</h2>
+                <p className="text-sm text-[#6B7280] mb-5">
+                  Pay{' '}
+                  <strong className="text-[#1F2937]">
+                    {formatDownloadPrice(dl.price, dl.currency)}
+                  </strong>{' '}
+                  for {dl.title}
+                </p>
+                <div className="space-y-3 mb-4">
+                  <button
+                    onClick={() => handleGatewayCheckout('stripe')}
+                    className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>💳</span> Pay with Stripe
+                  </button>
+                  <button
+                    onClick={() => handleGatewayCheckout('paystack')}
+                    className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>🌍</span> Pay with Paystack
+                  </button>
+                </div>
+                {error && <p className="text-sm text-[#EF4444] mb-3">{error}</p>}
+                <button
+                  onClick={() => { setCheckoutStep('idle'); setError(''); }}
+                  className="w-full py-2 text-sm text-[#6B7280] hover:text-[#1F2937]"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

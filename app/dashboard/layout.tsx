@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { clearToken } from '@/lib/auth';
@@ -36,17 +36,20 @@ const PLAN_BADGE: Record<PlanTier, { label: string; cls: string }> = {
   PRO: { label: 'Pro ★', cls: 'text-[#0D9488] bg-[#0D9488]/15' },
 };
 
+function WelcomeDetector({ onWelcome }: { onWelcome: () => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('welcome') === '1') onWelcome();
+  }, [searchParams, onWelcome]);
+  return null;
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<CreatorProfile | null>(null);
   const [planTier, setPlanTier] = useState<PlanTier>('FREE');
   const [showWelcome, setShowWelcome] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get('welcome') === '1') setShowWelcome(true);
-  }, [searchParams]);
 
   useEffect(() => {
     getMyProfile().then(setProfile).catch(() => { });
@@ -62,6 +65,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-[#F3F4F6] flex">
+      <Suspense fallback={null}>
+        <WelcomeDetector onWelcome={() => setShowWelcome(true)} />
+      </Suspense>
       {/* Sidebar */}
       <aside className="w-60 bg-[#1F2937] flex flex-col fixed inset-y-0 left-0 z-20">
         {/* Logo */}

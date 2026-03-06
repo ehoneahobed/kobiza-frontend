@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { API_URL } from '@/lib/api';
 
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://kobiza.com';
 
@@ -17,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const res = await fetch(`${API_URL}/api/creators/explore`, {
       headers: { 'Content-Type': 'application/json' },
       next: { revalidate: 3600 },
+      signal: AbortSignal.timeout(10000),
     });
     if (res.ok) {
       const creators = await res.json();
