@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getPublicCourse, PublicCourse } from '@/lib/courses';
-import { createCheckoutSession, enrollFree, isPaystackCurrency } from '@/lib/payments';
+import { createCheckoutSession, enrollFree, isPaystackCurrency, getExchangeRate, PAYSTACK_DEFAULT_CURRENCY } from '@/lib/payments';
 import { getToken } from '@/lib/auth';
 import { formatPrice } from '@/lib/creator';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
@@ -27,6 +27,8 @@ export default function CourseLandingPage() {
   const [track, setTrack] = useState<Track>('self_paced');
   const [error, setError] = useState('');
   const [openModuleIdx, setOpenModuleIdx] = useState<number | null>(0);
+  const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
+  const [convertedCurrency, setConvertedCurrency] = useState<string | null>(null);
 
   const isLoggedIn = !!getToken();
 
@@ -51,6 +53,24 @@ export default function CourseLandingPage() {
   const deliverableCount = course.modules
     .flatMap((m) => m.lessons)
     .filter((l) => l.requiresDeliverable).length;
+
+  const needsConversion = !isPaystackCurrency(course.currency);
+  const trackPrice = track === 'self_paced' ? course.priceSelfPaced : course.priceAccountability;
+
+  useEffect(() => {
+    if (step === 'select-gateway' && needsConversion && trackPrice > 0) {
+      setConvertedPrice(null);
+      getExchangeRate(course.currency, PAYSTACK_DEFAULT_CURRENCY, trackPrice)
+        .then((res) => {
+          if (res.convertedAmount != null) {
+            setConvertedPrice(res.convertedAmount);
+            setConvertedCurrency(PAYSTACK_DEFAULT_CURRENCY);
+          }
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, needsConversion, trackPrice]);
 
   const isFree = (t: Track) =>
     t === 'self_paced' ? course.priceSelfPaced === 0 : course.priceAccountability === 0;
@@ -339,14 +359,17 @@ export default function CourseLandingPage() {
                   >
                     <span>💳</span> Pay with Stripe
                   </button>
-                  {isPaystackCurrency(course.currency) && (
-                    <button
-                      onClick={() => handleGatewayCheckout('paystack')}
-                      className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <span>🌍</span> Pay with Paystack
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleGatewayCheckout('paystack')}
+                    className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>🌍</span> Pay with Paystack
+                    {needsConversion && convertedPrice != null && convertedCurrency && (
+                      <span className="text-xs text-[#6B7280] font-normal">
+                        {'\u2248'} {formatPrice(convertedPrice, convertedCurrency)}
+                      </span>
+                    )}
+                  </button>
                 </div>
                 {error && <p className="text-sm text-[#EF4444] mb-3">{error}</p>}
                 <button

@@ -11,7 +11,8 @@ import {
   CustomFieldConfig,
 } from '@/lib/downloadables';
 import { getToken } from '@/lib/auth';
-import { createCheckoutSession, isPaystackCurrency } from '@/lib/payments';
+import { createCheckoutSession, isPaystackCurrency, getExchangeRate, PAYSTACK_DEFAULT_CURRENCY } from '@/lib/payments';
+import { formatPrice } from '@/lib/creator';
 import MarkdownRenderer from '@/components/ui/MarkdownRenderer';
 
 // ── Page ────────────────────────────────────────────────────────────────────
@@ -32,6 +33,8 @@ export default function DownloadLandingPage() {
   const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [customFieldData, setCustomFieldData] = useState<Record<string, string>>({});
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('idle');
+  const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
+  const [convertedCurrency, setConvertedCurrency] = useState<string | null>(null);
 
   useEffect(() => {
     getDownloadablePublic(downloadId)
@@ -88,6 +91,23 @@ export default function DownloadLandingPage() {
       setActionLoading(false);
     }
   };
+
+  const needsConversion = dl ? !isPaystackCurrency(dl.currency) : false;
+
+  useEffect(() => {
+    if (checkoutStep === 'select-gateway' && dl && needsConversion && dl.price > 0) {
+      setConvertedPrice(null);
+      getExchangeRate(dl.currency, PAYSTACK_DEFAULT_CURRENCY, dl.price)
+        .then((res) => {
+          if (res.convertedAmount != null) {
+            setConvertedPrice(res.convertedAmount);
+            setConvertedCurrency(PAYSTACK_DEFAULT_CURRENCY);
+          }
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkoutStep, needsConversion, dl?.price]);
 
   const handleBuy = () => {
     if (!getToken()) {
@@ -387,14 +407,17 @@ export default function DownloadLandingPage() {
                   >
                     <span>💳</span> Pay with Stripe
                   </button>
-                  {isPaystackCurrency(dl.currency) && (
-                    <button
-                      onClick={() => handleGatewayCheckout('paystack')}
-                      className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <span>🌍</span> Pay with Paystack
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleGatewayCheckout('paystack')}
+                    className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>🌍</span> Pay with Paystack
+                    {needsConversion && convertedPrice != null && convertedCurrency && (
+                      <span className="text-xs text-[#6B7280] font-normal">
+                        {'\u2248'} {formatPrice(convertedPrice, convertedCurrency)}
+                      </span>
+                    )}
+                  </button>
                 </div>
                 {error && <p className="text-sm text-[#EF4444] mb-3">{error}</p>}
                 <button

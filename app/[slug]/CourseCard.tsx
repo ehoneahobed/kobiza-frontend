@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { createCheckoutSession, enrollFree, isPaystackCurrency } from '@/lib/payments';
+import { useEffect, useState } from 'react';
+import { createCheckoutSession, enrollFree, isPaystackCurrency, getExchangeRate, PAYSTACK_DEFAULT_CURRENCY } from '@/lib/payments';
 import { formatPrice } from '@/lib/creator';
 
 interface Course {
@@ -25,6 +25,25 @@ export default function CourseCard({ course, brand }: Props) {
   const [step, setStep] = useState<Step>('idle');
   const [track, setTrack] = useState<'self_paced' | 'accountability'>('self_paced');
   const [error, setError] = useState('');
+  const [convertedPrice, setConvertedPrice] = useState<number | null>(null);
+  const [convertedCurrency, setConvertedCurrency] = useState<string | null>(null);
+
+  const needsConversion = !isPaystackCurrency(course.currency);
+  const trackPrice = track === 'self_paced' ? course.priceSelfPaced : course.priceAccountability;
+
+  useEffect(() => {
+    if (step === 'select-gateway' && needsConversion && trackPrice > 0) {
+      setConvertedPrice(null);
+      getExchangeRate(course.currency, PAYSTACK_DEFAULT_CURRENCY, trackPrice)
+        .then((res) => {
+          if (res.convertedAmount != null) {
+            setConvertedPrice(res.convertedAmount);
+            setConvertedCurrency(PAYSTACK_DEFAULT_CURRENCY);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [step, needsConversion, trackPrice, course.currency]);
 
   const isFree = (t: 'self_paced' | 'accountability') =>
     t === 'self_paced' ? course.priceSelfPaced === 0 : course.priceAccountability === 0;
@@ -173,14 +192,17 @@ export default function CourseCard({ course, brand }: Props) {
                   >
                     <span>💳</span> Pay with Stripe
                   </button>
-                  {isPaystackCurrency(course.currency) && (
-                    <button
-                      onClick={() => handleGatewayCheckout('paystack')}
-                      className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
-                    >
-                      <span>🌍</span> Pay with Paystack
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleGatewayCheckout('paystack')}
+                    className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
+                  >
+                    <span>🌍</span> Pay with Paystack
+                    {needsConversion && convertedPrice != null && convertedCurrency && (
+                      <span className="text-xs text-[#6B7280] font-normal">
+                        {'\u2248'} {formatPrice(convertedPrice, convertedCurrency)}
+                      </span>
+                    )}
+                  </button>
                 </div>
                 {error && <p className="text-sm text-[#EF4444] mb-3">{error}</p>}
                 <button

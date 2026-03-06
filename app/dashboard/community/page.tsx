@@ -9,6 +9,7 @@ import {
   deleteCommunity,
   setFeaturedCommunity,
   createTier,
+  updateTier,
   deleteTier,
   Community,
   MembershipTier,
@@ -61,6 +62,11 @@ export default function CommunityPage() {
   const [showTierForm, setShowTierForm] = useState(false);
   const [tierForm, setTierForm] = useState({ name: '', description: '', priceMonthly: '', priceAnnual: '', currency: 'USD' });
   const [tierLoading, setTierLoading] = useState(false);
+
+  // Edit tier form
+  const [editingTierId, setEditingTierId] = useState<string | null>(null);
+  const [editTierForm, setEditTierForm] = useState({ name: '', description: '', priceMonthly: '', priceAnnual: '' });
+  const [editTierLoading, setEditTierLoading] = useState(false);
 
   // Feed state
   const [posts, setPosts] = useState<Post[]>([]);
@@ -356,6 +362,48 @@ export default function CommunityPage() {
       );
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const handleStartEditTier = (tier: MembershipTier) => {
+    setEditingTierId(tier.id);
+    setEditTierForm({
+      name: tier.name,
+      description: tier.description ?? '',
+      priceMonthly: (tier.priceMonthly / 100).toString(),
+      priceAnnual: tier.priceAnnual > 0 ? (tier.priceAnnual / 100).toString() : '',
+    });
+  };
+
+  const handleCancelEditTier = () => {
+    setEditingTierId(null);
+    setEditTierForm({ name: '', description: '', priceMonthly: '', priceAnnual: '' });
+  };
+
+  const handleUpdateTier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!community || !editingTierId) return;
+    setEditTierLoading(true);
+    setError('');
+    try {
+      const updated = await updateTier(community.id, editingTierId, {
+        name: editTierForm.name,
+        description: editTierForm.description || undefined,
+        priceMonthly: Math.round(parseFloat(editTierForm.priceMonthly || '0') * 100),
+        priceAnnual: editTierForm.priceAnnual ? Math.round(parseFloat(editTierForm.priceAnnual) * 100) : 0,
+      });
+      setCommunities((cs) =>
+        cs.map((c) =>
+          c.id === community.id
+            ? { ...c, membershipTiers: c.membershipTiers.map((t) => (t.id === editingTierId ? updated : t)) }
+            : c,
+        ),
+      );
+      setEditingTierId(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setEditTierLoading(false);
     }
   };
 
@@ -1853,38 +1901,100 @@ export default function CommunityPage() {
             )}
 
             <div className="space-y-3">
-              {community.membershipTiers.map((tier: MembershipTier) => (
-                <div
-                  key={tier.id}
-                  className="flex items-center justify-between border border-[#F3F4F6] rounded-lg p-4"
-                >
-                  <div>
-                    <p className="font-medium text-[#1F2937]">{tier.name}</p>
-                    {tier.description && (
-                      <p className="text-sm text-[#6B7280]">{tier.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <span className="font-bold text-[#0D9488]">
-                        {formatPrice(tier.priceMonthly, tier.currency)}
-                        {tier.priceMonthly > 0 && <span className="font-normal text-[#6B7280] text-xs">/mo</span>}
-                      </span>
-                      {tier.priceAnnual > 0 && (
-                        <p className="text-xs text-[#6B7280]">
-                          {formatPrice(tier.priceAnnual, tier.currency)}/yr
-                        </p>
+              {community.membershipTiers.map((tier: MembershipTier) =>
+                editingTierId === tier.id ? (
+                  <form
+                    key={tier.id}
+                    onSubmit={handleUpdateTier}
+                    className="border border-[#0D9488] rounded-lg p-4 space-y-3 bg-teal-50/30"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium text-[#1F2937]">Edit Tier</h4>
+                      <span className="text-xs text-[#6B7280] bg-[#F3F4F6] px-2 py-0.5 rounded">{tier.currency}</span>
+                    </div>
+                    <Input
+                      label="Tier Name"
+                      value={editTierForm.name}
+                      onChange={(e) => setEditTierForm((f) => ({ ...f, name: e.target.value }))}
+                      required
+                    />
+                    <Input
+                      label="Description"
+                      value={editTierForm.description}
+                      onChange={(e) => setEditTierForm((f) => ({ ...f, description: e.target.value }))}
+                    />
+                    <div className="flex gap-3">
+                      <Input
+                        label="Monthly Price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editTierForm.priceMonthly}
+                        onChange={(e) => setEditTierForm((f) => ({ ...f, priceMonthly: e.target.value }))}
+                        className="flex-1"
+                      />
+                      <Input
+                        label="Annual Price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={editTierForm.priceAnnual}
+                        onChange={(e) => setEditTierForm((f) => ({ ...f, priceAnnual: e.target.value }))}
+                        className="flex-1"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" loading={editTierLoading} className="flex-1">
+                        Save Changes
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={handleCancelEditTier}
+                        className="px-4 py-2 text-sm text-[#6B7280] hover:text-[#1F2937] border border-[#E5E7EB] rounded-lg"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div
+                    key={tier.id}
+                    className="flex items-center justify-between border border-[#F3F4F6] rounded-lg p-4"
+                  >
+                    <div>
+                      <p className="font-medium text-[#1F2937]">{tier.name}</p>
+                      {tier.description && (
+                        <p className="text-sm text-[#6B7280]">{tier.description}</p>
                       )}
                     </div>
-                    <button
-                      onClick={() => handleDeleteTier(tier.id)}
-                      className="text-[#EF4444] text-sm hover:underline"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <span className="font-bold text-[#0D9488]">
+                          {formatPrice(tier.priceMonthly, tier.currency)}
+                          {tier.priceMonthly > 0 && <span className="font-normal text-[#6B7280] text-xs">/mo</span>}
+                        </span>
+                        {tier.priceAnnual > 0 && (
+                          <p className="text-xs text-[#6B7280]">
+                            {formatPrice(tier.priceAnnual, tier.currency)}/yr
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleStartEditTier(tier)}
+                        className="text-[#0D9488] text-sm hover:underline"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTier(tier.id)}
+                        className="text-[#EF4444] text-sm hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
 
             {showTierForm && (

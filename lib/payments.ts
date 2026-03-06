@@ -7,9 +7,23 @@ export type PaymentGateway = 'stripe' | 'paystack';
 /** Currencies that Paystack supports (core African currencies). */
 export const PAYSTACK_CURRENCIES = new Set(['NGN', 'GHS', 'ZAR', 'KES']);
 
+/** The default currency Paystack will convert to when the product currency isn't supported. */
+export const PAYSTACK_DEFAULT_CURRENCY = 'GHS';
+
 /** Returns true if the currency is supported by Paystack. */
 export function isPaystackCurrency(currency: string): boolean {
   return PAYSTACK_CURRENCIES.has(currency.toUpperCase());
+}
+
+/** Fetch the exchange rate (and optionally a converted amount) from the backend. */
+export async function getExchangeRate(
+  from: string,
+  to: string,
+  amount?: number,
+): Promise<{ rate: number; convertedAmount?: number }> {
+  const params = new URLSearchParams({ from, to });
+  if (amount !== undefined) params.set('amount', String(amount));
+  return apiFetch(`/payments/exchange-rate?${params.toString()}`);
 }
 
 export interface CheckoutSessionRequest {
