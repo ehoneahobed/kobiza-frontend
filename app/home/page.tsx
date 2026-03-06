@@ -62,22 +62,31 @@ function Sidebar({
           </button>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
-          {user?.role === 'CREATOR' && (
-            <>
+        {/* Role switcher */}
+        {user?.role === 'CREATOR' && (
+          <div className={collapsed ? 'px-2 pt-3' : 'px-3 pt-3'}>
+            <div className="flex bg-white/10 rounded-lg p-0.5">
               <Link
                 href="/dashboard"
-                className={`flex items-center gap-3 rounded-lg text-sm font-semibold text-[#0D9488] bg-[#0D9488]/10 hover:bg-[#0D9488]/20 transition-colors ${
-                  collapsed ? 'justify-center px-2 py-2.5' : 'px-3 py-2.5'
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-md text-white/60 hover:text-white text-xs font-medium transition-colors ${
+                  collapsed ? 'px-1 py-1.5' : 'px-3 py-1.5'
                 }`}
-                title={collapsed ? 'Creator Dashboard' : undefined}
+                title={collapsed ? 'Creator' : undefined}
               >
-                <span className="text-base flex-shrink-0">🎨</span>
-                {!collapsed && 'Creator Dashboard'}
+                <span>🎨</span>
+                {!collapsed && <span>Creator</span>}
               </Link>
-              <div className="my-1.5 border-t border-white/10" />
-            </>
-          )}
+              <div className={`flex-1 flex items-center justify-center gap-1.5 rounded-md bg-[#0D9488] text-white text-xs font-semibold ${
+                collapsed ? 'px-1 py-1.5' : 'px-3 py-1.5'
+              }`}>
+                <span>📚</span>
+                {!collapsed && <span>Learn</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <nav className="flex-1 p-3 space-y-1">
           {NAV.map((item) => (
             <Link
               key={item.href}

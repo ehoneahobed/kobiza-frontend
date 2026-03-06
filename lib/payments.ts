@@ -4,6 +4,14 @@ export type ProductType = 'course' | 'membership' | 'download' | 'coaching';
 export type CourseTrack = 'self_paced' | 'accountability';
 export type PaymentGateway = 'stripe' | 'paystack';
 
+/** Currencies that Paystack supports (core African currencies). */
+export const PAYSTACK_CURRENCIES = new Set(['NGN', 'GHS', 'ZAR', 'KES']);
+
+/** Returns true if the currency is supported by Paystack. */
+export function isPaystackCurrency(currency: string): boolean {
+  return PAYSTACK_CURRENCIES.has(currency.toUpperCase());
+}
+
 export interface CheckoutSessionRequest {
   productId: string;
   productType: ProductType;

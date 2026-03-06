@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createCheckoutSession } from '@/lib/payments';
+import { createCheckoutSession, isPaystackCurrency } from '@/lib/payments';
 import { joinFreeTier } from '@/lib/community';
 import { formatPrice } from '@/lib/creator';
 
@@ -223,12 +223,14 @@ export default function MembershipCard({ tier, brand, slug }: Props) {
               >
                 <span>💳</span> Pay with Stripe
               </button>
-              <button
-                onClick={() => handleGatewayCheckout('paystack')}
-                className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
-              >
-                <span>🌍</span> Pay with Paystack
-              </button>
+              {isPaystackCurrency(tier.currency) && (
+                <button
+                  onClick={() => handleGatewayCheckout('paystack')}
+                  className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
+                >
+                  <span>🌍</span> Pay with Paystack
+                </button>
+              )}
             </div>
             {error && <p className="text-sm text-[#EF4444] mb-3">{error}</p>}
             <button

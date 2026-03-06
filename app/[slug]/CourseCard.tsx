@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createCheckoutSession, enrollFree } from '@/lib/payments';
+import { createCheckoutSession, enrollFree, isPaystackCurrency } from '@/lib/payments';
 import { formatPrice } from '@/lib/creator';
 
 interface Course {
@@ -173,12 +173,14 @@ export default function CourseCard({ course, brand }: Props) {
                   >
                     <span>💳</span> Pay with Stripe
                   </button>
-                  <button
-                    onClick={() => handleGatewayCheckout('paystack')}
-                    className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <span>🌍</span> Pay with Paystack
-                  </button>
+                  {isPaystackCurrency(course.currency) && (
+                    <button
+                      onClick={() => handleGatewayCheckout('paystack')}
+                      className="w-full py-3 rounded-xl border border-[#F3F4F6] font-semibold text-[#1F2937] hover:border-[#0D9488] transition-colors flex items-center justify-center gap-2"
+                    >
+                      <span>🌍</span> Pay with Paystack
+                    </button>
+                  )}
                 </div>
                 {error && <p className="text-sm text-[#EF4444] mb-3">{error}</p>}
                 <button

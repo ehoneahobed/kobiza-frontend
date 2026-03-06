@@ -27,7 +27,6 @@ const navItems: NavEntry[] = [
   { type: 'link', label: 'Settings', href: '/dashboard/settings', icon: '⚙' },
   { type: 'separator' },
   { type: 'link', label: 'Explore', href: '/explore', icon: '🔍', external: true },
-  { type: 'link', label: 'My Learning', href: '/home', icon: '📚', external: true },
 ];
 
 const PLAN_BADGE: Record<PlanTier, { label: string; cls: string }> = {
@@ -75,6 +74,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link href="/dashboard" className="text-2xl font-bold text-[#0D9488]">
             Kobiza
           </Link>
+        </div>
+
+        {/* Role switcher */}
+        <div className="px-4 pt-3">
+          <div className="flex bg-white/10 rounded-lg p-0.5">
+            <div className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0D9488] text-white text-xs font-semibold">
+              <span>🎨</span>
+              <span>Creator</span>
+            </div>
+            <Link
+              href="/home"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md text-white/60 hover:text-white text-xs font-medium transition-colors"
+            >
+              <span>📚</span>
+              <span>Learn</span>
+            </Link>
+          </div>
         </div>
 
         {/* Creator identity */}
