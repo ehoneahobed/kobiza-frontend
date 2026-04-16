@@ -26,6 +26,8 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  /** When `aspectRatio` is not passed, match the file’s aspect so we don’t force react-easy-crop’s default 4:3 crop. */
+  const [naturalAspect, setNaturalAspect] = useState<number | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -56,9 +58,18 @@ export function ImageUpload({
 
     const reader = new FileReader();
     reader.onload = () => {
-      setImageSrc(reader.result as string);
-      setCrop({ x: 0, y: 0 });
-      setZoom(1);
+      const url = reader.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        setNaturalAspect(h > 0 ? w / h : 1);
+        setImageSrc(url);
+        setCrop({ x: 0, y: 0 });
+        setZoom(1);
+      };
+      img.onerror = () => setError('Could not read this image file.');
+      img.src = url;
     };
     reader.readAsDataURL(file);
 
@@ -113,6 +124,7 @@ export function ImageUpload({
       await uploadToS3(uploadUrl, blob, 'image/jpeg', setProgress);
       onChange(publicUrl);
       setImageSrc(null);
+      setNaturalAspect(null);
     } catch (err: any) {
       setError(err.message ?? 'Upload failed. Please try again.');
     } finally {
@@ -130,6 +142,8 @@ export function ImageUpload({
   };
 
   const isRound = shape === 'round';
+  /** Parent override, else match uploaded file, else square fallback (should be rare). Round avatars always use 1:1. */
+  const cropAspect = isRound ? 1 : (aspectRatio ?? naturalAspect ?? 1);
 
   return (
     <div className="flex flex-col gap-1">
@@ -236,7 +250,7 @@ export function ImageUpload({
               <p className="text-xs text-[#6B7280]">
                 {aspectRatio
                   ? `Aspect ratio: ${aspectRatio === 1 ? '1:1 (square)' : aspectRatio >= 3 ? '3:1 (banner)' : '16:9 (widescreen)'}`
-                  : 'Free crop'}
+                  : 'Drag to reposition and use zoom. The frame matches your image shape.'}
               </p>
             </div>
 
@@ -245,7 +259,7 @@ export function ImageUpload({
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={aspectRatio || undefined}
+                aspect={cropAspect}
                 cropShape={isRound ? 'round' : 'rect'}
                 onCropChange={setCrop}
                 onZoomChange={setZoom}
@@ -286,7 +300,11 @@ export function ImageUpload({
               <Button
                 variant="secondary"
                 className="flex-1"
-                onClick={() => { setImageSrc(null); setError(''); }}
+                onClick={() => {
+                  setImageSrc(null);
+                  setNaturalAspect(null);
+                  setError('');
+                }}
                 disabled={uploading}
               >
                 Cancel

@@ -366,7 +366,7 @@ function FeedTab({
                 <img
                   src={postImageUrl}
                   alt="Attached"
-                  className="h-20 rounded-lg object-cover"
+                  className="max-h-40 max-w-full w-auto rounded-lg object-contain border border-[#E5E7EB] bg-[#F9FAFB]"
                 />
                 <button
                   type="button"
