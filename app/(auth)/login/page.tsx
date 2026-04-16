@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { login, saveToken } from '@/lib/auth';
+import { API_URL } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -42,7 +43,7 @@ export default function LoginPage() {
 
           {/* Google OAuth */}
           <a
-            href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/api/auth/google`}
+            href={`${API_URL}/api/auth/google`}
             className="flex items-center justify-center gap-3 w-full border border-[#6B7280] rounded-lg py-3 text-[#1F2937] font-medium hover:bg-[#F3F4F6] transition-colors mb-6"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5">

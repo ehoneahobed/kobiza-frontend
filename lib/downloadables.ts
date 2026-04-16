@@ -1,4 +1,4 @@
-import { apiFetch } from './api';
+import { apiFetch, API_URL } from './api';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -176,7 +176,6 @@ export async function getDownloadableAccesses(
 
 export async function downloadAccessesCsv(downloadableId: string): Promise<void> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('Kobiza_token') : null;
-  const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
   const res = await fetch(`${API_URL}/api/downloadables/${downloadableId}/accesses/export`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });

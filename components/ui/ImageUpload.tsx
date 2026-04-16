@@ -59,17 +59,46 @@ export function ImageUpload({
     const reader = new FileReader();
     reader.onload = () => {
       const url = reader.result as string;
-      const img = new Image();
-      img.onload = () => {
-        const w = img.naturalWidth;
-        const h = img.naturalHeight;
+
+      void (async () => {
+        let w = 0;
+        let h = 0;
+        try {
+          if (typeof createImageBitmap === 'function') {
+            const bmp = await createImageBitmap(file, {
+              imageOrientation: 'from-image',
+            } as ImageBitmapOptions);
+            try {
+              w = bmp.width;
+              h = bmp.height;
+            } finally {
+              bmp.close();
+            }
+          }
+        } catch {
+          /* fall back to <img> dimensions */
+        }
+
+        if (w <= 0 || h <= 0) {
+          const img = new Image();
+          const ok = await new Promise<boolean>((resolve) => {
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = url;
+          });
+          if (!ok) {
+            setError('Could not read this image file.');
+            return;
+          }
+          w = img.naturalWidth;
+          h = img.naturalHeight;
+        }
+
         setNaturalAspect(h > 0 ? w / h : 1);
         setImageSrc(url);
         setCrop({ x: 0, y: 0 });
         setZoom(1);
-      };
-      img.onerror = () => setError('Could not read this image file.');
-      img.src = url;
+      })();
     };
     reader.readAsDataURL(file);
 
